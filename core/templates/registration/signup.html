@@ -1,1 +1,102 @@
-{% extends 'core/base.html' %}{% block title %}Register · BMS Resident Portal{% endblock %}{% block content %}<section class="auth-layout"><div class="auth-intro"><span class="eyebrow"><i class="bi bi-people-fill"></i> RESIDENT SERVICES ONLINE</span><h1>Your barangay,<br><em>within reach.</em></h1><p>Create an account to request documents online and receive real-time updates from the barangay office.</p><div class="trust-row"><span><i class="bi bi-file-earmark-check"></i> Five document services</span><span><i class="bi bi-qr-code"></i> QR verification</span></div></div><div class="auth-card signup-card"><span class="eyebrow"><i class="bi bi-person-plus"></i> CREATE ACCOUNT</span><h2>Join the portal</h2><p class="auth-subtitle">It only takes a minute.</p><form method="post">{% csrf_token %}{% for field in form %}<label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}{% if field.errors %}<div class="form-error">{{ field.errors|striptags }}</div>{% endif %}{% endfor %}<button class="primary-action w-100"><i class="bi bi-person-check"></i> Create resident account</button></form><p class="auth-footer">Already registered? <a href="{% url 'login' %}">Sign in</a></p></div></section>{% endblock %}
+{% extends 'core/base.html' %}
+
+{% block title %}
+    Register · BMS Resident Portal
+{% endblock %}
+
+{% block content %}
+
+<section class="auth-layout">
+
+    <div class="auth-intro">
+
+        <span class="eyebrow">
+            <i class="bi bi-people-fill"></i>
+            RESIDENT SERVICES ONLINE
+        </span>
+
+        <h1>
+            Your barangay,<br>
+            <em>within reach.</em>
+        </h1>
+
+        <p>
+            Create an account to request documents online and receive
+            real-time updates from the barangay office.
+        </p>
+
+        <div class="trust-row">
+
+            <span>
+                <i class="bi bi-file-earmark-check"></i>
+                Five document services
+            </span>
+
+            <span>
+                <i class="bi bi-qr-code"></i>
+                QR verification
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <div class="auth-card signup-card">
+
+        <span class="eyebrow">
+            <i class="bi bi-person-plus"></i>
+            CREATE ACCOUNT
+        </span>
+
+        <h2>
+            Join the portal
+        </h2>
+
+        <p class="auth-subtitle">
+            It only takes a minute.
+        </p>
+
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            {% for field in form %}
+
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.errors %}
+                    <div class="form-error">
+                        {{ field.errors|striptags }}
+                    </div>
+                {% endif %}
+
+            {% endfor %}
+
+
+            <button class="primary-action w-100">
+                <i class="bi bi-person-check"></i>
+                Create resident account
+            </button>
+
+        </form>
+
+
+        <p class="auth-footer">
+            Already registered?
+            <a href="{% url 'login' %}">
+                Sign in
+            </a>
+        </p>
+
+    </div>
+
+</section>
+
+{% endblock %}
+```
