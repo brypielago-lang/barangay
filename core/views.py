@@ -487,114 +487,96 @@ def staff_requests(request):
 
 @staff_required
 def update_request(request, pk):
-
     obj = get_object_or_404(
-        CertificateRequest,
+        CertificateRequest.objects.select_related('resident__user'),
         pk=pk
     )
 
     if request.method == 'POST':
 
-        new_status = request.POST.get(
-            'status'
-        )
+        status = request.POST.get('status')
 
-        if new_status in dict(
-            CertificateRequest.STATUS
-        ):
+        if status in dict(CertificateRequest.STATUS):
 
-            # Save the OLD status first.
             old_status = obj.status
 
-            # New remarks
-            obj.remarks = request.POST.get(
-                'remarks',
-                ''
-            )
-
+            obj.status = status
+            obj.remarks = request.POST.get('remarks', '')
             obj.reviewed_by = request.user
 
-            # =================================================
-            # STATUS
-            # =================================================
-
-            obj.status = new_status
-
-            # =================================================
-            # APPROVED / REJECTED DATE
-            # =================================================
-
-            if new_status in (
-                'approved',
-                'rejected'
-            ):
-
+            if status in ('approved', 'rejected'):
                 obj.reviewed_at = timezone.now()
 
-            # =================================================
-            # RELEASED DATE
-            # =================================================
-
-            if new_status == 'released':
-
+            if status == 'released':
                 obj.released_at = timezone.now()
-
-            # =================================================
-            # SAVE REQUEST
-            # =================================================
 
             obj.save()
 
-            # =================================================
-            # IN-APP NOTIFICATION
-            # =================================================
+            # ==================================================
+            # NOTIFICATION SA USER
+            # ==================================================
 
-            notify_request(
-                obj,
+            resident = obj.resident
+            user = resident.user
 
-                f'Request {new_status.title()}',
+            if user:
 
-                (
-                    f'Your '
-                    f'{obj.get_certificate_type_display()} '
-                    f'request '
-                    f'({obj.reference_no}) '
-                    f'is now {new_status}.'
+                status_text = status.title()
+
+                notification_title = (
+                    f'Certificate Request {status_text}'
                 )
-            )
 
-            # =================================================
-            # EMAIL
-            #
-            # Only send when the status actually changes.
-            # This prevents duplicate emails.
-            # =================================================
+                notification_message = (
+                    f'Your {obj.get_certificate_type_display()} '
+                    f'request ({obj.reference_no}) '
+                    f'is now {status_text}.'
+                )
 
-            if old_status != new_status:
+                Notification.objects.create(
+                    user=user,
+                    title=notification_title,
+                    message=notification_message,
+                    url=f'/requests/{obj.pk}/'
+                )
 
-                if new_status in (
-                    'approved',
-                    'rejected'
-                ):
+                # ==================================================
+                # EMAIL
+                # ==================================================
 
-                    email_request_status(
-                        obj,
-                        new_status
+                try:
+                    from django.core.mail import send_mail
+
+                    if user.email:
+
+                        send_mail(
+                            subject=notification_title,
+                            message=notification_message,
+                            from_email=None,
+                            recipient_list=[user.email],
+                            fail_silently=False
+                        )
+
+                except Exception as e:
+
+                    print(
+                        "EMAIL ERROR:",
+                        repr(e)
                     )
 
-            # =================================================
+            # ==================================================
             # ACTIVITY LOG
-            # =================================================
+            # ==================================================
 
             log(
                 request.user,
-                f'Changed request to {new_status}',
+                f'Changed request to {status}',
                 obj.reference_no
             )
 
             messages.success(
                 request,
-                'Request updated.'
+                f'Request {obj.reference_no} updated to {status}.'
             )
 
     return redirect(
