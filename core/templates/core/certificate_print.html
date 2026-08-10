@@ -1,1 +1,306 @@
-<!doctype html><html><head><title>{{ title }}</title><style>body{font-family:Georgia,serif;margin:45px;color:#152238}.head{text-align:center;border-bottom:3px solid #173f7a;padding-bottom:16px}.qr{float:right;width:88px}.title{text-align:center;margin:45px 0 35px;text-transform:uppercase}.content{font-size:16px;line-height:1.9;text-align:justify}.sign{margin-top:70px;text-align:right}@media print{button{display:none}body{margin:25px}}</style></head><body><button onclick="print()">Print</button><section class="head">{% if barangay.logo %}<img src="{{ barangay.logo.url }}" height="70">{% endif %}<img class="qr" src="{% url 'qr_code' item.verification_token %}"><h3>Republic of the Philippines</h3><div>{{ barangay.name }}</div><small>{{ barangay.address }}</small></section><h2 class="title">{{ title }}</h2><div class="content">{{ body|linebreaks }}</div><p>Reference No.: {{ item.reference_no }}</p><p>Issued this {{ item.reviewed_at|date:'jS' }} day of {{ item.reviewed_at|date:'F Y' }}.</p><div class="sign"><b>{{ barangay.captain_name|default:'Barangay Captain' }}</b><br><small>Barangay Captain</small></div>{% if footer %}<footer>{{ footer }}</footer>{% endif %}</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #eef1f5;
+            font-family: Georgia, "Times New Roman", serif;
+            color: #182333;
+        }
+
+        .toolbar {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .toolbar button {
+            background: #173f7a;
+            color: white;
+            border: 0;
+            padding: 11px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .certificate {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            padding: 16mm;
+            background: white;
+            position: relative;
+            box-shadow: 0 8px 30px rgba(0,0,0,.12);
+        }
+
+        .outer-border {
+            min-height: 265mm;
+            border: 3px solid #173f7a;
+            padding: 5px;
+        }
+
+        .inner-border {
+            min-height: 255mm;
+            border: 1px solid #c5a45d;
+            padding: 25px 38px;
+        }
+
+        .header {
+            text-align: center;
+            position: relative;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #d6dbe2;
+        }
+
+        .logo {
+            width: 82px;
+            height: 82px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+
+        .republic {
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .province {
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .barangay-name {
+            color: #173f7a;
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-top: 6px;
+            letter-spacing: 1px;
+        }
+
+        .address {
+            font-size: 12px;
+            color: #667085;
+            margin-top: 5px;
+        }
+
+        .qr {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 78px;
+            height: 78px;
+        }
+
+        .document-title {
+            text-align: center;
+            margin: 32px 0 25px;
+        }
+
+        .document-title h1 {
+            margin: 0;
+            color: #173f7a;
+            font-size: 27px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .document-title .line {
+            width: 90px;
+            height: 3px;
+            background: #c5a45d;
+            margin: 12px auto 0;
+        }
+
+        .body {
+            font-size: 16px;
+            line-height: 2;
+            text-align: justify;
+            min-height: 115mm;
+        }
+
+        .body p {
+            margin: 0 0 16px;
+        }
+
+        .reference {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #475467;
+        }
+
+        .date-issued {
+            margin-top: 14px;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .signature-area {
+            margin-top: 55px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .signature {
+            width: 250px;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #182333;
+            margin-bottom: 8px;
+        }
+
+        .captain {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 15px;
+        }
+
+        .position {
+            font-size: 12px;
+            color: #667085;
+            margin-top: 3px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 12px;
+            border-top: 1px solid #d6dbe2;
+            text-align: center;
+            font-size: 11px;
+            color: #667085;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .toolbar {
+                display: none;
+            }
+
+            .certificate {
+                margin: 0;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="toolbar">
+    <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="certificate">
+    <div class="outer-border">
+        <div class="inner-border">
+
+            <header class="header">
+
+                {% if barangay.logo %}
+                    <img class="logo" src="{{ barangay.logo.url }}" alt="Barangay Logo">
+                {% endif %}
+
+                <img
+                    class="qr"
+                    src="{% url 'qr_code' item.verification_token %}"
+                    alt="Verification QR Code"
+                >
+
+                <div class="republic">
+                    Republic of the Philippines
+                </div>
+
+                {% if barangay.province %}
+                    <div class="province">
+                        Province of {{ barangay.province }}
+                    </div>
+                {% endif %}
+
+                {% if barangay.municipality %}
+                    <div class="province">
+                        Municipality of {{ barangay.municipality }}
+                    </div>
+                {% endif %}
+
+                <div class="barangay-name">
+                    {{ barangay.name }}
+                </div>
+
+                {% if barangay.address %}
+                    <div class="address">
+                        {{ barangay.address }}
+                    </div>
+                {% endif %}
+
+            </header>
+
+            <section class="document-title">
+                <h1>{{ title }}</h1>
+                <div class="line"></div>
+            </section>
+
+            <section class="body">
+                {{ body|linebreaks }}
+            </section>
+
+            <div class="reference">
+                <strong>Reference No.:</strong>
+                {{ item.reference_no }}
+            </div>
+
+            {% if item.reviewed_at %}
+                <div class="date-issued">
+                    Issued this
+                    <strong>{{ item.reviewed_at|date:"jS" }}</strong>
+                    day of
+                    <strong>{{ item.reviewed_at|date:"F Y" }}</strong>.
+                </div>
+            {% endif %}
+
+            <div class="signature-area">
+                <div class="signature">
+
+                    <div class="signature-line"></div>
+
+                    <div class="captain">
+                        {{ barangay.captain_name|default:"Barangay Captain" }}
+                    </div>
+
+                    <div class="position">
+                        Punong Barangay
+                    </div>
+
+                </div>
+            </div>
+
+            {% if footer %}
+                <footer class="footer">
+                    {{ footer|linebreaks }}
+                </footer>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
