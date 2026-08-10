@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
 
 from .models import (
     BarangayProfile,
@@ -19,6 +20,7 @@ from .models import (
 
 @admin.register(BarangayProfile)
 class BarangayProfileAdmin(admin.ModelAdmin):
+
     list_display = (
         'name',
         'municipality',
@@ -35,6 +37,7 @@ class BarangayProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Resident)
 class ResidentAdmin(admin.ModelAdmin):
+
     list_display = (
         'resident_no',
         'full_name',
@@ -66,6 +69,7 @@ class ResidentAdmin(admin.ModelAdmin):
 
 @admin.register(CertificateTemplate)
 class CertificateTemplateAdmin(admin.ModelAdmin):
+
     list_display = (
         'certificate_type',
         'title',
@@ -84,6 +88,7 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(IDTemplate)
 class IDTemplateAdmin(admin.ModelAdmin):
+
     list_display = (
         'name',
         'is_active',
@@ -97,7 +102,7 @@ class IDTemplateAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(CertificateRequest)
-class CertificateRequestAdmin(admin.ModelAdmin):
+class CertificateRequestAdmin:
 
     list_display = (
         'reference_no',
@@ -129,15 +134,16 @@ class CertificateRequestAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
 
-        # ---------------------------------------------
-        # GET OLD STATUS BEFORE SAVING
-        # ---------------------------------------------
+        # =====================================================
+        # GET OLD STATUS
+        # =====================================================
 
         old_status = None
 
         if change and obj.pk:
 
             try:
+
                 old_obj = CertificateRequest.objects.get(
                     pk=obj.pk
                 )
@@ -145,11 +151,13 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 old_status = old_obj.status
 
             except CertificateRequest.DoesNotExist:
+
                 old_status = None
 
-        # ---------------------------------------------
-        # ADMIN WHO REVIEWED
-        # ---------------------------------------------
+
+        # =====================================================
+        # REVIEWED BY
+        # =====================================================
 
         if obj.status in (
             'approved',
@@ -159,9 +167,10 @@ class CertificateRequestAdmin(admin.ModelAdmin):
 
             obj.reviewed_by = request.user
 
-        # ---------------------------------------------
+
+        # =====================================================
         # REVIEWED DATE
-        # ---------------------------------------------
+        # =====================================================
 
         if obj.status in (
             'approved',
@@ -169,24 +178,24 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         ):
 
             if not obj.reviewed_at:
-                from django.utils import timezone
 
                 obj.reviewed_at = timezone.now()
 
-        # ---------------------------------------------
+
+        # =====================================================
         # RELEASED DATE
-        # ---------------------------------------------
+        # =====================================================
 
         if obj.status == 'released':
 
             if not obj.released_at:
-                from django.utils import timezone
 
                 obj.released_at = timezone.now()
 
-        # ---------------------------------------------
-        # SAVE REQUEST
-        # ---------------------------------------------
+
+        # =====================================================
+        # SAVE REQUEST FIRST
+        # =====================================================
 
         super().save_model(
             request,
@@ -195,49 +204,86 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             change
         )
 
-        # ---------------------------------------------
-        # ONLY NOTIFY WHEN STATUS ACTUALLY CHANGES
-        # ---------------------------------------------
 
-        if old_status != obj.status:
+        # =====================================================
+        # STATUS CHANGED?
+        # =====================================================
 
-            resident = obj.resident
+        if old_status == obj.status:
 
-            user = resident.user
+            return
 
-            if not user:
-                return
 
-            status_text = obj.get_status_display()
+        # =====================================================
+        # GET USER
+        # =====================================================
 
-            certificate_name = (
-                obj.get_certificate_type_display()
+        resident = obj.resident
+
+        user = resident.user
+
+        if not user:
+
+            print(
+                'NOTIFICATION ERROR: '
+                'Resident has no linked user.'
             )
 
-            title = (
-                f'Certificate Request {status_text}'
+            return
+
+
+        # =====================================================
+        # STATUS TEXT
+        # =====================================================
+
+        status_text = obj.get_status_display()
+
+        certificate_name = (
+            obj.get_certificate_type_display()
+        )
+
+
+        # =====================================================
+        # NOTIFICATION TITLE
+        # =====================================================
+
+        title = (
+            f'Certificate Request {status_text}'
+        )
+
+
+        # =====================================================
+        # NOTIFICATION MESSAGE
+        # =====================================================
+
+        message = (
+            f'Your {certificate_name} request '
+            f'({obj.reference_no}) '
+            f'is now {status_text.lower()}.'
+        )
+
+
+        if obj.remarks:
+
+            message += (
+                f'\n\nRemarks: {obj.remarks}'
             )
 
-            message = (
-                f'Your {certificate_name} request '
-                f'({obj.reference_no}) '
-                f'is now {status_text.lower()}.'
-            )
 
-            if obj.remarks:
+        # =====================================================
+        # WEBSITE NOTIFICATION
+        # =====================================================
 
-                message += (
-                    f'\n\nRemarks: {obj.remarks}'
-                )
-
-            # =========================================
-            # WEBSITE NOTIFICATION
-            # =========================================
+        try:
 
             Notification.objects.create(
+
                 user=user,
+
                 title=title,
+
                 message=message,
+
                 url=f'/requests/{obj.pk}/'
             )
 
@@ -246,44 +292,67 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 f'{user.username}'
             )
 
-            # =========================================
-            # EMAIL
-            # =========================================
+        except Exception as e:
 
-            if user.email:
+            print(
+                f'NOTIFICATION ERROR: {repr(e)}'
+            )
 
-                try:
 
-                    send_mail(
-                        subject=title,
-                        message=message,
-                        from_email=getattr(
-                            settings,
-                            'DEFAULT_FROM_EMAIL',
-                            settings.EMAIL_HOST_USER
-                        ),
-                        recipient_list=[
-                            user.email
-                        ],
-                        fail_silently=False,
-                    )
+        # =====================================================
+        # EMAIL
+        # =====================================================
 
-                    print(
-                        f'EMAIL SENT TO: {user.email}'
-                    )
+        if not user.email:
 
-                except Exception as e:
+            print(
+                f'EMAIL NOT SENT: '
+                f'{user.username} has no email.'
+            )
 
-                    print(
-                        f'EMAIL ERROR: {repr(e)}'
-                    )
+            return
 
-            else:
 
-                print(
-                    f'EMAIL NOT SENT: '
-                    f'{user.username} has no email.'
-                )
+        try:
+
+            print(
+                f'SENDING EMAIL TO: '
+                f'{user.email}'
+            )
+
+            send_mail(
+
+                subject=title,
+
+                message=message,
+
+                from_email=getattr(
+                    settings,
+                    'DEFAULT_FROM_EMAIL',
+                    settings.EMAIL_HOST_USER
+                ),
+
+                recipient_list=[
+                    user.email
+                ],
+
+                fail_silently=True,
+
+            )
+
+            print(
+                f'EMAIL PROCESS FINISHED FOR: '
+                f'{user.email}'
+            )
+
+        except Exception as e:
+
+            # IMPORTANT:
+            # Email failure MUST NOT break admin.
+
+            print(
+                f'EMAIL ERROR: {repr(e)}'
+            )
 
 
 # =========================================================
