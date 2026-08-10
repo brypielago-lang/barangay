@@ -1,1613 +1,412 @@
-{% extends "admin/base.html" %}
+{% extends "admin/base_site.html" %}
 {% load i18n static log %}
 
-{% block title %}Barangay Management System{% endblock %}
+{% block title %}Barangay Management Dashboard{% endblock %}
 
 {% block extrastyle %}
 {{ block.super }}
 
 <style>
-
-/* =========================================================
-   BARANGAY MANAGEMENT SYSTEM - PROFESSIONAL ADMIN DASHBOARD
-   ========================================================= */
-
-:root {
-    --bm-navy: #14284a;
-    --bm-navy-dark: #0d1d38;
-    --bm-blue: #2166d1;
-    --bm-blue-light: #eaf2ff;
-    --bm-text: #17233b;
-    --bm-muted: #718096;
-    --bm-border: #e3e8f0;
-    --bm-bg: #f5f7fb;
-    --bm-white: #ffffff;
-    --bm-green: #169b55;
-    --bm-orange: #ed9517;
-    --bm-purple: #7445d8;
-}
-
-/* Remove the original Django admin header.
-   We create our own professional header below. */
-#header {
-    display: none !important;
-}
-
-#nav-sidebar {
-    display: none !important;
-}
-
-.breadcrumbs {
-    display: none !important;
-}
-
-#content {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-}
-
-#content-main {
-    width: 100% !important;
-    margin: 0 !important;
-}
-
-body {
-    background: var(--bm-bg) !important;
-    color: var(--bm-text) !important;
-}
-
-/* Remove old Django dashboard table/module styling */
-.module {
-    box-shadow: none !important;
-}
-
-
-/* =========================================================
-   TOP HEADER
-   ========================================================= */
-
-.bm-topbar {
-    height: 68px;
-    background: var(--bm-navy);
-    color: white;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding: 0 28px;
-    box-sizing: border-box;
-}
-
-.bm-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.bm-logo {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-
-    background: linear-gradient(135deg, #ffffff, #dfe9ff);
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    color: var(--bm-blue);
-    font-size: 21px;
-    font-weight: 800;
-
-    box-shadow: 0 3px 10px rgba(0,0,0,.20);
-}
-
-.bm-brand-title {
-    font-size: 17px;
-    font-weight: 700;
-    line-height: 1.1;
-}
-
-.bm-brand-subtitle {
-    font-size: 11px;
-    color: #b8c7df;
-    margin-top: 3px;
-}
-
-.bm-top-right {
-    display: flex;
-    align-items: center;
-    gap: 23px;
-}
-
-.bm-top-link {
-    color: #e9eff9 !important;
-    text-decoration: none !important;
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.bm-top-link:hover {
-    color: white !important;
-}
-
-.bm-theme {
-    font-size: 22px;
-}
-
-
-/* =========================================================
-   MAIN LAYOUT
-   ========================================================= */
-
-.bm-layout {
-    display: flex;
-    min-height: calc(100vh - 68px);
-}
-
-
-/* =========================================================
-   SIDEBAR
-   ========================================================= */
-
-.bm-sidebar {
-    width: 245px;
-    flex: 0 0 245px;
-
-    background: linear-gradient(
-        180deg,
-        var(--bm-navy),
-        var(--bm-navy-dark)
-    );
-
-    color: white;
-
-    padding: 22px 13px;
-    box-sizing: border-box;
-
-    display: flex;
-    flex-direction: column;
-}
-
-.bm-section-label {
-    color: #9caecc;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .7px;
-    text-transform: uppercase;
-
-    margin: 8px 10px 10px;
-}
-
-.bm-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.bm-nav a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-
-    color: #dce6f6 !important;
-    text-decoration: none !important;
-
-    padding: 11px 12px;
-    border-radius: 7px;
-
-    font-size: 13px;
-    font-weight: 500;
-
-    transition: .15s ease;
-}
-
-.bm-nav a:hover {
-    background: rgba(255,255,255,.09);
-    color: white !important;
-}
-
-.bm-nav a.active {
-    background: linear-gradient(
-        90deg,
-        #2166d1,
-        #2d75df
-    );
-
-    color: white !important;
-
-    box-shadow: 0 5px 15px rgba(0,0,0,.18);
-}
-
-.bm-nav-icon {
-    width: 20px;
-    text-align: center;
-    font-size: 16px;
-}
-
-.bm-divider {
-    height: 1px;
-    background: rgba(255,255,255,.10);
-    margin: 17px 4px;
-}
-
-.bm-system-card {
-    margin-top: auto;
-
-    background: rgba(255,255,255,.07);
-    border: 1px solid rgba(255,255,255,.10);
-
-    border-radius: 9px;
-    padding: 15px;
-}
-
-.bm-system-title {
-    font-size: 12px;
-    font-weight: 700;
-    margin-bottom: 12px;
-}
-
-.bm-system-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-
-    color: #b7c6dd;
-
-    font-size: 10px;
-    padding: 5px 0;
-}
-
-.bm-system-row strong {
-    color: white;
-    font-weight: 500;
-}
-
-.bm-online {
-    color: #45d47d !important;
-}
-
-.bm-sidebar-footer {
-    color: #8394ae;
-    font-size: 9px;
-    line-height: 1.5;
-    margin: 16px 5px 0;
-}
-
-
-/* =========================================================
-   MAIN CONTENT
-   ========================================================= */
-
-.bm-main {
-    flex: 1;
-    min-width: 0;
-    padding: 25px;
-    box-sizing: border-box;
-}
-
-
-/* =========================================================
-   WELCOME BANNER
-   ========================================================= */
-
-.bm-welcome {
-    position: relative;
-    overflow: hidden;
-
-    min-height: 142px;
-
-    background:
-        linear-gradient(
-            105deg,
-            #2264ca 0%,
-            #2e69c8 48%,
-            #3157a6 100%
-        );
-
-    border-radius: 10px;
-
-    padding: 26px 25px;
-    box-sizing: border-box;
-
-    color: white;
-
-    margin-bottom: 20px;
-
-    box-shadow: 0 7px 20px rgba(28,73,143,.15);
-}
-
-.bm-welcome:after {
-    content: "";
-
-    position: absolute;
-    right: -100px;
-    bottom: -100px;
-
-    width: 450px;
-    height: 220px;
-
-    border-radius: 50%;
-
-    background: rgba(255,255,255,.07);
-}
-
-.bm-welcome-small {
-    font-size: 14px;
-    margin-bottom: 3px;
-}
-
-.bm-welcome h1 {
-    margin: 0;
-    color: white;
-
-    font-size: 27px;
-    font-weight: 750;
-}
-
-.bm-welcome p {
-    margin: 8px 0 0;
-
-    color: #e1ebff;
-    font-size: 12px;
-}
-
-.bm-welcome-building {
-    position: absolute;
-    right: 45px;
-    bottom: 15px;
-
-    font-size: 80px;
-    opacity: .15;
-}
-
-
-/* =========================================================
-   STATISTICS
-   ========================================================= */
-
-.bm-stats {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-
-    gap: 17px;
-
-    margin-bottom: 20px;
-}
-
-.bm-stat {
-    position: relative;
-
-    background: white;
-
-    border: 1px solid var(--bm-border);
-    border-radius: 10px;
-
-    min-height: 120px;
-
-    padding: 19px;
-
-    display: flex;
-    align-items: center;
-    gap: 15px;
-
-    box-sizing: border-box;
-
-    box-shadow: 0 2px 8px rgba(28,45,75,.035);
-}
-
-.bm-stat-icon {
-    width: 48px;
-    height: 48px;
-
-    flex: 0 0 48px;
-
-    border-radius: 10px;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 22px;
-}
-
-.bm-stat.blue .bm-stat-icon {
-    background: #e5f0ff;
-    color: #2166d1;
-}
-
-.bm-stat.green .bm-stat-icon {
-    background: #e3f7eb;
-    color: #169b55;
-}
-
-.bm-stat.orange .bm-stat-icon {
-    background: #fff0d4;
-    color: #ed9517;
-}
-
-.bm-stat.purple .bm-stat-icon {
-    background: #eee5ff;
-    color: #7445d8;
-}
-
-.bm-stat-label {
-    color: #62718a;
-    font-size: 11px;
-    margin-bottom: 5px;
-}
-
-.bm-stat-value {
-    color: #17233b;
-    font-size: 26px;
-    font-weight: 750;
-    line-height: 1;
-}
-
-.bm-stat-description {
-    color: #8290a6;
-    font-size: 9px;
-    margin-top: 7px;
-}
-
-
-/* =========================================================
-   CONTENT GRID
-   ========================================================= */
-
-.bm-content-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr);
-    gap: 18px;
-}
-
-.bm-card {
-    background: white;
-
-    border: 1px solid var(--bm-border);
-    border-radius: 10px;
-
-    overflow: hidden;
-
-    box-shadow: 0 2px 8px rgba(28,45,75,.035);
-}
-
-.bm-card-header {
-    padding: 17px 19px;
-
-    border-bottom: 1px solid var(--bm-border);
-}
-
-.bm-card-title {
-    color: #182744;
-
-    font-size: 15px;
-    font-weight: 700;
-
-    margin: 0;
-}
-
-.bm-card-subtitle {
-    color: #8090a8;
-
-    font-size: 10px;
-
-    margin: 5px 0 0;
-}
-
-
-/* =========================================================
-   MANAGEMENT MODULES
-   ========================================================= */
-
-.bm-management {
-    padding: 0;
-}
-
-.bm-group-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-
-    padding: 12px 19px 9px;
-
-    color: #2364c9;
-
-    font-size: 11px;
-    font-weight: 700;
-}
-
-.bm-group-title.green {
-    color: #16854a;
-}
-
-.bm-model {
-    min-height: 51px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    gap: 15px;
-
-    padding: 8px 19px;
-
-    border-top: 1px solid #edf0f5;
-
-    box-sizing: border-box;
-}
-
-.bm-model:hover {
-    background: #fafcff;
-}
-
-.bm-model-left {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-
-    min-width: 0;
-}
-
-.bm-model-icon {
-    width: 31px;
-    height: 31px;
-
-    border-radius: 7px;
-
-    background: #eef4ff;
-
-    color: #2868ca;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 14px;
-
-    flex: 0 0 31px;
-}
-
-.bm-model-name {
-    color: #1d2a43;
-
-    font-size: 11px;
-    font-weight: 650;
-}
-
-.bm-model-description {
-    color: #8390a4;
-
-    font-size: 9px;
-
-    margin-top: 2px;
-}
-
-.bm-actions {
-    display: flex;
-    gap: 7px;
-
-    flex: 0 0 auto;
-}
-
-.bm-action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    min-width: 57px;
-
-    padding: 6px 10px;
-
-    border-radius: 5px;
-
-    font-size: 10px;
-    font-weight: 600;
-
-    text-decoration: none !important;
-
-    box-sizing: border-box;
-}
-
-.bm-action.view {
-    background: white;
-
-    border: 1px solid #3b7ce0;
-
-    color: #2166d1 !important;
-}
-
-.bm-action.view:hover {
-    background: #edf4ff;
-}
-
-.bm-action.add {
-    background: #2166d1;
-
-    border: 1px solid #2166d1;
-
-    color: white !important;
-}
-
-.bm-action.add:hover {
-    background: #1555b5;
-}
-
-
-/* =========================================================
-   RECENT ACTIVITY
-   ========================================================= */
-
-.bm-recent {
-    padding: 0 18px;
-}
-
-.bm-activity {
-    display: flex;
-    align-items: center;
-
-    gap: 11px;
-
-    padding: 13px 0;
-
-    border-bottom: 1px solid #edf0f5;
-}
-
-.bm-activity:last-child {
-    border-bottom: none;
-}
-
-.bm-activity-icon {
-    width: 31px;
-    height: 31px;
-
-    flex: 0 0 31px;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 13px;
-}
-
-.bm-activity-icon.add {
-    background: #e4f8eb;
-    color: #169b55;
-}
-
-.bm-activity-icon.change {
-    background: #fff1d8;
-    color: #d9890d;
-}
-
-.bm-activity-icon.delete {
-    background: #ffe6e7;
-    color: #df3c43;
-}
-
-.bm-activity-text {
-    min-width: 0;
-    flex: 1;
-}
-
-.bm-activity-title {
-    color: #29364d;
-
-    font-size: 10px;
-    font-weight: 600;
-
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.bm-activity-time {
-    color: #8b98aa;
-
-    font-size: 8px;
-
-    margin-top: 3px;
-}
-
-.bm-activity-arrow {
-    color: #9ba7b8;
-    font-size: 11px;
-}
-
-.bm-no-activity {
-    padding: 35px 10px;
-
-    text-align: center;
-
-    color: #8996a8;
-    font-size: 11px;
-}
-
-.bm-view-all {
-    display: block;
-
-    margin: 4px 0 15px;
-
-    padding: 9px;
-
-    text-align: center;
-
-    border: 1px solid #d9e2ee;
-    border-radius: 6px;
-
-    color: #4c6280 !important;
-
-    font-size: 10px;
-    font-weight: 600;
-
-    text-decoration: none !important;
-}
-
-
-/* =========================================================
-   FOOTER
-   ========================================================= */
-
-.bm-footer {
-    display: flex;
-    justify-content: space-between;
-
-    color: #7c8ba2;
-
-    font-size: 9px;
-
-    padding: 22px 4px 5px;
-}
-
-
-/* =========================================================
-   RESPONSIVE
-   ========================================================= */
-
-@media (max-width: 1200px) {
-
-    .bm-sidebar {
-        width: 215px;
-        flex-basis: 215px;
+    /* MAIN */
+    #content {
+        padding: 32px !important;
+        background: #f5f7fa !important;
     }
 
-    .bm-main {
-        padding: 20px;
+    #content-main {
+        width: 100% !important;
+        float: none !important;
     }
 
-    .bm-content-grid {
-        grid-template-columns: 1fr;
+    .dashboard-wrapper {
+        max-width: 1400px;
+        margin: 0 auto;
     }
 
-}
-
-@media (max-width: 900px) {
-
-    .bm-stats {
-        grid-template-columns: repeat(2, 1fr);
+    /* HEADER */
+    .dashboard-header {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
     }
 
-    .bm-sidebar {
-        width: 190px;
-        flex-basis: 190px;
+    .dashboard-header h1 {
+        margin: 0;
+        color: #172033;
+        font-size: 28px;
+        font-weight: 700;
     }
 
-    .bm-top-right {
-        gap: 10px;
-    }
-
-    .bm-top-link {
-        display: none;
-    }
-
-}
-
-@media (max-width: 650px) {
-
-    .bm-topbar {
-        height: 60px;
-        padding: 0 15px;
-    }
-
-    .bm-brand-title {
+    .dashboard-header p {
+        margin: 7px 0 0;
+        color: #6b7280;
         font-size: 14px;
     }
 
-    .bm-layout {
-        display: block;
-    }
-
-    .bm-sidebar {
-        width: 100%;
-        min-height: auto;
-        padding: 10px;
-    }
-
-    .bm-nav {
+    /* STAT CARDS */
+    .stats-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
     }
 
-    .bm-system-card,
-    .bm-sidebar-footer {
-        display: none;
+    .stat-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
     }
 
-    .bm-main {
-        padding: 13px;
+    .stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
-    .bm-stats {
-        grid-template-columns: 1fr;
+    .stat-title {
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 600;
     }
 
-    .bm-welcome {
-        min-height: 125px;
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #eef6fb;
+        font-size: 20px;
     }
 
-    .bm-welcome h1 {
-        font-size: 22px;
+    .stat-number {
+        margin-top: 15px;
+        color: #172033;
+        font-size: 28px;
+        font-weight: 700;
     }
 
-    .bm-model {
-        align-items: flex-start;
+    /* CONTENT GRID */
+    .content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+        gap: 24px;
+        align-items: start;
     }
 
-    .bm-actions {
-        flex-direction: column;
+    .card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,.04);
     }
 
-    .bm-footer {
-        display: block;
-        line-height: 1.8;
+    .card-header {
+        padding: 22px 24px;
+        border-bottom: 1px solid #edf0f3;
     }
 
-}
+    .card-header h2 {
+        margin: 0;
+        color: #172033;
+        font-size: 18px;
+        font-weight: 700;
+    }
 
+    .card-header p {
+        margin: 5px 0 0;
+        color: #7b8494;
+        font-size: 13px;
+    }
+
+    /* MODULES */
+    .module {
+        padding: 20px 24px;
+        border-bottom: 1px solid #edf0f3;
+    }
+
+    .module:last-child {
+        border-bottom: none;
+    }
+
+    .module-title {
+        margin-bottom: 13px;
+        color: #28789d;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+    }
+
+    .model-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .model-row {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        background: #f8fafc;
+        border: 1px solid #e7ebf0;
+        border-radius: 9px;
+    }
+
+    .model-name {
+        color: #303846;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .model-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .model-actions a {
+        text-decoration: none !important;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 6px 9px;
+        border-radius: 6px;
+    }
+
+    .view-btn {
+        color: #236783 !important;
+        background: #e8f4f9;
+    }
+
+    .add-btn {
+        color: #28713b !important;
+        background: #eaf7ed;
+    }
+
+    /* RECENT ACTIONS */
+    .recent-list {
+        padding: 8px 24px 20px;
+    }
+
+    .recent-item {
+        padding: 15px 0;
+        border-bottom: 1px solid #edf0f3;
+        color: #374151;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .recent-item:last-child {
+        border-bottom: none;
+    }
+
+    .recent-time {
+        margin-bottom: 4px;
+        color: #9ca3af;
+        font-size: 11px;
+    }
+
+    .empty {
+        padding: 20px 0;
+        color: #9ca3af;
+        font-size: 13px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1100px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 700px) {
+        #content {
+            padding: 18px !important;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .model-list {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
 {% endblock %}
 
 
 {% block content %}
 
-<!-- =====================================================
-     TOP HEADER
-     ===================================================== -->
+<div class="dashboard-wrapper">
 
-<div class="bm-topbar">
+    <div class="dashboard-header">
+        <h1>Barangay Management Dashboard</h1>
+        <p>Welcome to Barangay Maniwaya administration portal.</p>
+    </div>
 
-    <div class="bm-brand">
 
-        <div class="bm-logo">
-            B
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <div class="stat-title">Residents</div>
+                <div class="stat-icon">👥</div>
+            </div>
+            <div class="stat-number">—</div>
         </div>
 
-        <div>
-            <div class="bm-brand-title">
-                Barangay Maniwaya
+        <div class="stat-card">
+            <div class="stat-top">
+                <div class="stat-title">Certificate Requests</div>
+                <div class="stat-icon">📄</div>
             </div>
+            <div class="stat-number">—</div>
+        </div>
 
-            <div class="bm-brand-subtitle">
-                Management System
+        <div class="stat-card">
+            <div class="stat-top">
+                <div class="stat-title">Approved Requests</div>
+                <div class="stat-icon">✓</div>
             </div>
+            <div class="stat-number">—</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-top">
+                <div class="stat-title">Notifications</div>
+                <div class="stat-icon">🔔</div>
+            </div>
+            <div class="stat-number">—</div>
         </div>
 
     </div>
 
 
-    <div class="bm-top-right">
+    <div class="content-grid">
 
-        <span class="bm-theme">
-            ☾
-        </span>
+        <div class="card">
 
-        <span class="bm-top-link">
-            Welcome, {{ user.username }}
-        </span>
+            <div class="card-header">
+                <h2>Management</h2>
+                <p>Manage residents, certificates and barangay records.</p>
+            </div>
 
-        <a href="{% url 'admin:index' %}" class="bm-top-link">
-            Dashboard
-        </a>
+            {% for app in app_list %}
 
-        <a href="{% url 'admin:password_change' %}" class="bm-top-link">
-            Change Password
-        </a>
+            <div class="module">
 
-        <form action="{% url 'admin:logout' %}" method="post" style="margin:0;">
-            {% csrf_token %}
-            <button
-                type="submit"
-                class="bm-top-link"
-                style="
-                    background:none;
-                    border:0;
-                    cursor:pointer;
-                    padding:0;
-                    font-family:inherit;
-                "
-            >
-                Log Out
-            </button>
-        </form>
+                <div class="module-title">
+                    {{ app.name }}
+                </div>
+
+                <div class="model-list">
+
+                    {% for model in app.models %}
+
+                    <div class="model-row">
+
+                        <span class="model-name">
+                            {{ model.name }}
+                        </span>
+
+                        <div class="model-actions">
+
+                            {% if model.admin_url %}
+                            <a href="{{ model.admin_url }}" class="view-btn">
+                                View
+                            </a>
+                            {% endif %}
+
+                            {% if model.add_url %}
+                            <a href="{{ model.add_url }}" class="add-btn">
+                                + Add
+                            </a>
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            {% empty %}
+
+            <div class="module">
+                <div class="empty">
+                    No management modules available.
+                </div>
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-header">
+                <h2>Recent Actions</h2>
+                <p>Latest activity in the system.</p>
+            </div>
+
+            <div class="recent-list">
+
+                {% get_admin_log 8 as admin_log %}
+
+                {% if admin_log %}
+
+                    {% for entry in admin_log %}
+
+                    <div class="recent-item">
+
+                        <div class="recent-time">
+                            {{ entry.action_time|date:"M d, Y • h:i A" }}
+                        </div>
+
+                        {% if entry.is_deletion %}
+                            Deleted {{ entry.object_repr }}
+                        {% elif entry.is_addition %}
+                            Added {{ entry.object_repr }}
+                        {% else %}
+                            Changed {{ entry.object_repr }}
+                        {% endif %}
+
+                    </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="empty">
+                        No recent actions available.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
 
     </div>
-
-</div>
-
-
-<!-- =====================================================
-     DASHBOARD LAYOUT
-     ===================================================== -->
-
-<div class="bm-layout">
-
-
-    <!-- =================================================
-         SIDEBAR
-         ================================================= -->
-
-    <aside class="bm-sidebar">
-
-        <div class="bm-section-label">
-            Main
-        </div>
-
-        <nav class="bm-nav">
-
-            <a href="{% url 'admin:index' %}" class="active">
-                <span class="bm-nav-icon">⌂</span>
-                <span>Dashboard</span>
-            </a>
-
-        </nav>
-
-
-        <div class="bm-section-label" style="margin-top:22px;">
-            Authentication and Authorization
-        </div>
-
-        <nav class="bm-nav">
-
-            {% for app in app_list %}
-
-                {% if app.name == "Authentication and Authorization" %}
-
-                    {% for model in app.models %}
-
-                        {% if model.admin_url %}
-
-                            <a href="{{ model.admin_url }}">
-
-                                <span class="bm-nav-icon">
-                                    {% if model.name == "Users" %}
-                                        ♙
-                                    {% else %}
-                                        ♧
-                                    {% endif %}
-                                </span>
-
-                                <span>
-                                    {{ model.name }}
-                                </span>
-
-                            </a>
-
-                        {% endif %}
-
-                    {% endfor %}
-
-                {% endif %}
-
-            {% endfor %}
-
-        </nav>
-
-
-        <div class="bm-divider"></div>
-
-
-        <div class="bm-section-label">
-            Barangay Management
-        </div>
-
-
-        <nav class="bm-nav">
-
-            {% for app in app_list %}
-
-                {% if app.name != "Authentication and Authorization" %}
-
-                    {% for model in app.models %}
-
-                        {% if model.admin_url %}
-
-                            <a href="{{ model.admin_url }}">
-
-                                <span class="bm-nav-icon">
-
-                                    {% if "Resident" in model.name %}
-                                        ♙
-                                    {% elif "Certificate" in model.name %}
-                                        ▣
-                                    {% elif "Notification" in model.name %}
-                                        ♧
-                                    {% elif "Profile" in model.name %}
-                                        ◉
-                                    {% elif "Activity" in model.name %}
-                                        ◷
-                                    {% elif "ID" in model.name %}
-                                        ▤
-                                    {% else %}
-                                        ◆
-                                    {% endif %}
-
-                                </span>
-
-                                <span>
-                                    {{ model.name }}
-                                </span>
-
-                            </a>
-
-                        {% endif %}
-
-                    {% endfor %}
-
-                {% endif %}
-
-            {% endfor %}
-
-        </nav>
-
-
-        <!-- SYSTEM INFORMATION -->
-
-        <div class="bm-system-card">
-
-            <div class="bm-system-title">
-                ⚙ System Information
-            </div>
-
-            <div class="bm-system-row">
-                <span>Version</span>
-                <strong>1.0.0</strong>
-            </div>
-
-            <div class="bm-system-row">
-                <span>Environment</span>
-                <strong>Production</strong>
-            </div>
-
-            <div class="bm-system-row">
-                <span>Database</span>
-                <strong>SQLite3</strong>
-            </div>
-
-            <div class="bm-system-row">
-                <span>Server</span>
-                <strong>Render</strong>
-            </div>
-
-            <div class="bm-system-row">
-                <span>Status</span>
-                <strong class="bm-online">
-                    ● Online
-                </strong>
-            </div>
-
-        </div>
-
-
-        <div class="bm-sidebar-footer">
-            © 2026 Barangay Maniwaya.<br>
-            All rights reserved.
-        </div>
-
-    </aside>
-
-
-    <!-- =================================================
-         MAIN
-         ================================================= -->
-
-    <main class="bm-main">
-
-
-        <!-- WELCOME -->
-
-        <section class="bm-welcome">
-
-            <div style="position:relative; z-index:2;">
-
-                <div class="bm-welcome-small">
-                    Welcome back,
-                </div>
-
-                <h1>
-                    {{ user.username }} 👋
-                </h1>
-
-                <p>
-                    Here's what's happening in your barangay today.
-                </p>
-
-            </div>
-
-            <div class="bm-welcome-building">
-                🏛
-            </div>
-
-        </section>
-
-
-        <!-- =================================================
-             STATISTICS
-             ================================================= -->
-
-        <section class="bm-stats">
-
-
-            <div class="bm-stat blue">
-
-                <div class="bm-stat-icon">
-                    ♙
-                </div>
-
-                <div>
-
-                    <div class="bm-stat-label">
-                        Total Residents
-                    </div>
-
-                    <div class="bm-stat-value">
-                        —
-                    </div>
-
-                    <div class="bm-stat-description">
-                        Registered residents
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="bm-stat green">
-
-                <div class="bm-stat-icon">
-                    ▣
-                </div>
-
-                <div>
-
-                    <div class="bm-stat-label">
-                        Certificate Requests
-                    </div>
-
-                    <div class="bm-stat-value">
-                        —
-                    </div>
-
-                    <div class="bm-stat-description">
-                        Total requests
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="bm-stat orange">
-
-                <div class="bm-stat-icon">
-                    ✓
-                </div>
-
-                <div>
-
-                    <div class="bm-stat-label">
-                        Approved Requests
-                    </div>
-
-                    <div class="bm-stat-value">
-                        —
-                    </div>
-
-                    <div class="bm-stat-description">
-                        Successfully approved
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="bm-stat purple">
-
-                <div class="bm-stat-icon">
-                    ♧
-                </div>
-
-                <div>
-
-                    <div class="bm-stat-label">
-                        Notifications
-                    </div>
-
-                    <div class="bm-stat-value">
-                        —
-                    </div>
-
-                    <div class="bm-stat-description">
-                        System notifications
-                    </div>
-
-                </div>
-
-            </div>
-
-
-        </section>
-
-
-        <!-- =================================================
-             MANAGEMENT + RECENT ACTIVITY
-             ================================================= -->
-
-        <section class="bm-content-grid">
-
-
-            <!-- MANAGEMENT -->
-
-            <div class="bm-card">
-
-                <div class="bm-card-header">
-
-                    <h2 class="bm-card-title">
-                        Management Modules
-                    </h2>
-
-                    <p class="bm-card-subtitle">
-                        Manage your barangay records and services.
-                    </p>
-
-                </div>
-
-
-                <div class="bm-management">
-
-
-                    {% for app in app_list %}
-
-                        {% if app.name == "Authentication and Authorization" %}
-
-                            <div class="bm-group-title">
-                                🛡 Authentication and Authorization
-                            </div>
-
-                            {% for model in app.models %}
-
-                                <div class="bm-model">
-
-                                    <div class="bm-model-left">
-
-                                        <div class="bm-model-icon">
-                                            {% if model.name == "Users" %}
-                                                ♙
-                                            {% else %}
-                                                ♧
-                                            {% endif %}
-                                        </div>
-
-                                        <div>
-
-                                            <div class="bm-model-name">
-                                                {{ model.name }}
-                                            </div>
-
-                                            <div class="bm-model-description">
-                                                Manage system
-                                                {{ model.name|lower }}
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="bm-actions">
-
-                                        {% if model.admin_url %}
-
-                                            <a
-                                                href="{{ model.admin_url }}"
-                                                class="bm-action view"
-                                            >
-                                                View
-                                            </a>
-
-                                        {% endif %}
-
-
-                                        {% if model.add_url %}
-
-                                            <a
-                                                href="{{ model.add_url }}"
-                                                class="bm-action add"
-                                            >
-                                                + Add
-                                            </a>
-
-                                        {% endif %}
-
-                                    </div>
-
-                                </div>
-
-                            {% endfor %}
-
-                        {% endif %}
-
-                    {% endfor %}
-
-
-
-                    {% for app in app_list %}
-
-                        {% if app.name != "Authentication and Authorization" %}
-
-                            <div class="bm-group-title green">
-                                🏛 {{ app.name }}
-                            </div>
-
-
-                            {% for model in app.models %}
-
-                                <div class="bm-model">
-
-                                    <div class="bm-model-left">
-
-                                        <div class="bm-model-icon">
-
-                                            {% if "Resident" in model.name %}
-                                                ♙
-                                            {% elif "Certificate" in model.name %}
-                                                ▣
-                                            {% elif "Notification" in model.name %}
-                                                ♧
-                                            {% elif "Profile" in model.name %}
-                                                ◉
-                                            {% elif "Activity" in model.name %}
-                                                ◷
-                                            {% elif "ID" in model.name %}
-                                                ▤
-                                            {% else %}
-                                                ◆
-                                            {% endif %}
-
-                                        </div>
-
-
-                                        <div>
-
-                                            <div class="bm-model-name">
-                                                {{ model.name }}
-                                            </div>
-
-                                            <div class="bm-model-description">
-                                                Manage
-                                                {{ model.name|lower }}
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-
-                                    <div class="bm-actions">
-
-                                        {% if model.admin_url %}
-
-                                            <a
-                                                href="{{ model.admin_url }}"
-                                                class="bm-action view"
-                                            >
-                                                View
-                                            </a>
-
-                                        {% endif %}
-
-
-                                        {% if model.add_url %}
-
-                                            <a
-                                                href="{{ model.add_url }}"
-                                                class="bm-action add"
-                                            >
-                                                + Add
-                                            </a>
-
-                                        {% endif %}
-
-                                    </div>
-
-                                </div>
-
-                            {% endfor %}
-
-                        {% endif %}
-
-                    {% empty %}
-
-                        <div style="
-                            padding:30px;
-                            text-align:center;
-                            color:#8996a8;
-                            font-size:12px;
-                        ">
-                            No management modules available.
-                        </div>
-
-                    {% endfor %}
-
-                </div>
-
-            </div>
-
-
-
-            <!-- RECENT ACTIVITY -->
-
-            <div class="bm-card">
-
-                <div class="bm-card-header">
-
-                    <h2 class="bm-card-title">
-                        Recent Activity
-                    </h2>
-
-                    <p class="bm-card-subtitle">
-                        Latest activities in the system.
-                    </p>
-
-                </div>
-
-
-                <div class="bm-recent">
-
-                    {% get_admin_log 6 as admin_log %}
-
-
-                    {% if admin_log %}
-
-                        {% for entry in admin_log %}
-
-                            <div class="bm-activity">
-
-                                <div class="
-                                    bm-activity-icon
-                                    {% if entry.is_addition %}
-                                        add
-                                    {% elif entry.is_deletion %}
-                                        delete
-                                    {% else %}
-                                        change
-                                    {% endif %}
-                                ">
-
-                                    {% if entry.is_addition %}
-                                        +
-                                    {% elif entry.is_deletion %}
-                                        ×
-                                    {% else %}
-                                        ✎
-                                    {% endif %}
-
-                                </div>
-
-
-                                <div class="bm-activity-text">
-
-                                    <div class="bm-activity-title">
-
-                                        {% if entry.is_deletion %}
-
-                                            Deleted {{ entry.object_repr }}
-
-                                        {% elif entry.is_addition %}
-
-                                            Added {{ entry.object_repr }}
-
-                                        {% else %}
-
-                                            Changed {{ entry.object_repr }}
-
-                                        {% endif %}
-
-                                    </div>
-
-
-                                    <div class="bm-activity-time">
-
-                                        {{ entry.action_time|date:"M d, Y • h:i A" }}
-
-                                    </div>
-
-                                </div>
-
-
-                                <div class="bm-activity-arrow">
-                                    ›
-                                </div>
-
-                            </div>
-
-                        {% endfor %}
-
-
-                    {% else %}
-
-                        <div class="bm-no-activity">
-
-                            <div style="
-                                font-size:32px;
-                                margin-bottom:10px;
-                                opacity:.45;
-                            ">
-                                ◷
-                            </div>
-
-                            No activity yet
-
-                            <div style="
-                                font-size:9px;
-                                margin-top:5px;
-                                color:#a3afbf;
-                            ">
-                                System activities will appear here
-                            </div>
-
-                        </div>
-
-                    {% endif %}
-
-
-                    <a href="{% url 'admin:admin_logentry_changelist' %}"
-                       class="bm-view-all">
-
-                        View all activities →
-
-                    </a>
-
-                </div>
-
-            </div>
-
-
-        </section>
-
-
-        <!-- FOOTER -->
-
-        <footer class="bm-footer">
-
-            <span>
-                Barangay Management System v1.0.0
-            </span>
-
-            <span>
-                Made with ❤️ for Barangay Maniwaya
-            </span>
-
-        </footer>
-
-
-    </main>
 
 </div>
 
