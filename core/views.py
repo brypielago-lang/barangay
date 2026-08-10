@@ -469,23 +469,12 @@ def certificate_pdf(request, pk):
     # -----------------------------------------------------
 
     certificate_templates = {
-
-        'indigency':
-            'core/certificates/indigency.html',
-
-        'clearance':
-            'core/certificates/clearance.html',
-
-        'residency':
-            'core/certificates/residency.html',
-
-        'business':
-            'core/certificates/business.html',
-
-        'good_moral':
-            'core/certificates/good_moral.html',
-    }
-
+    'indigency': 'core/indigency.html',
+    'clearance': 'core/clearance.html',
+    'residency': 'core/residency.html',
+    'business': 'core/business.html',
+    'good_moral': 'core/good_moral.html',
+}
     template_name = certificate_templates.get(
         obj.certificate_type,
         'core/certificates/default.html'
