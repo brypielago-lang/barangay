@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django.core.mail import send_mail
+from django.conf import settings
+
 from .models import (
     BarangayProfile,
     Resident,
@@ -10,6 +13,10 @@ from .models import (
 )
 
 
+# =========================================================
+# BARANGAY PROFILE
+# =========================================================
+
 @admin.register(BarangayProfile)
 class BarangayProfileAdmin(admin.ModelAdmin):
     list_display = (
@@ -17,8 +24,45 @@ class BarangayProfileAdmin(admin.ModelAdmin):
         'municipality',
         'province',
         'captain_name',
+        'contact_number',
+        'email',
     )
 
+
+# =========================================================
+# RESIDENT
+# =========================================================
+
+@admin.register(Resident)
+class ResidentAdmin(admin.ModelAdmin):
+    list_display = (
+        'resident_no',
+        'full_name',
+        'sex',
+        'civil_status',
+        'contact_number',
+        'user',
+        'is_active',
+    )
+
+    search_fields = (
+        'resident_no',
+        'first_name',
+        'middle_name',
+        'last_name',
+        'contact_number',
+    )
+
+    list_filter = (
+        'sex',
+        'civil_status',
+        'is_active',
+    )
+
+
+# =========================================================
+# CERTIFICATE TEMPLATE
+# =========================================================
 
 @admin.register(CertificateTemplate)
 class CertificateTemplateAdmin(admin.ModelAdmin):
@@ -28,127 +72,273 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
         'updated_at',
     )
 
-    list_filter = (
-        'certificate_type',
-    )
-
     search_fields = (
         'title',
         'body',
     )
 
-    fieldsets = (
-        (
-            'Certificate Information',
-            {
-                'fields': (
-                    'certificate_type',
-                    'title',
-                )
-            }
-        ),
-        (
-            'Certificate Content',
-            {
-                'fields': (
-                    'body',
-                    'footer',
-                ),
-                'description': (
-                    'Available variables: '
-                    '{{ resident.full_name }}, '
-                    '{{ request.purpose }}, '
-                    '{{ request.business_name }}, '
-                    '{{ request.business_address }}, '
-                    '{{ barangay.name }}, '
-                    '{{ barangay.municipality }}, '
-                    '{{ barangay.province }}, '
-                    '{{ barangay.captain_name }}'
-                ),
-            }
-        ),
-    )
 
+# =========================================================
+# ID TEMPLATE
+# =========================================================
 
 @admin.register(IDTemplate)
 class IDTemplateAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'is_active',
+        'show_qr',
         'updated_at',
     )
 
 
-@admin.register(Resident)
-class ResidentAdmin(admin.ModelAdmin):
-    list_display = (
-        'resident_no',
-        'full_name',
-        'sex',
-        'civil_status',
-        'address',
-        'is_active',
-    )
-
-    search_fields = (
-        'resident_no',
-        'first_name',
-        'middle_name',
-        'last_name',
-    )
-
-    list_filter = (
-        'sex',
-        'civil_status',
-        'is_active',
-    )
-
+# =========================================================
+# CERTIFICATE REQUEST
+# =========================================================
 
 @admin.register(CertificateRequest)
 class CertificateRequestAdmin(admin.ModelAdmin):
+
     list_display = (
         'reference_no',
         'resident',
         'certificate_type',
         'status',
         'requested_at',
+        'reviewed_at',
     )
 
     list_filter = (
-        'certificate_type',
         'status',
+        'certificate_type',
     )
 
     search_fields = (
         'reference_no',
         'resident__first_name',
         'resident__last_name',
-        'business_name',
     )
 
+    readonly_fields = (
+        'reference_no',
+        'requested_at',
+        'reviewed_at',
+        'released_at',
+        'verification_token',
+    )
+
+    def save_model(self, request, obj, form, change):
+
+        # ---------------------------------------------
+        # GET OLD STATUS BEFORE SAVING
+        # ---------------------------------------------
+
+        old_status = None
+
+        if change and obj.pk:
+
+            try:
+                old_obj = CertificateRequest.objects.get(
+                    pk=obj.pk
+                )
+
+                old_status = old_obj.status
+
+            except CertificateRequest.DoesNotExist:
+                old_status = None
+
+        # ---------------------------------------------
+        # ADMIN WHO REVIEWED
+        # ---------------------------------------------
+
+        if obj.status in (
+            'approved',
+            'rejected',
+            'released',
+        ):
+
+            obj.reviewed_by = request.user
+
+        # ---------------------------------------------
+        # REVIEWED DATE
+        # ---------------------------------------------
+
+        if obj.status in (
+            'approved',
+            'rejected',
+        ):
+
+            if not obj.reviewed_at:
+                from django.utils import timezone
+
+                obj.reviewed_at = timezone.now()
+
+        # ---------------------------------------------
+        # RELEASED DATE
+        # ---------------------------------------------
+
+        if obj.status == 'released':
+
+            if not obj.released_at:
+                from django.utils import timezone
+
+                obj.released_at = timezone.now()
+
+        # ---------------------------------------------
+        # SAVE REQUEST
+        # ---------------------------------------------
+
+        super().save_model(
+            request,
+            obj,
+            form,
+            change
+        )
+
+        # ---------------------------------------------
+        # ONLY NOTIFY WHEN STATUS ACTUALLY CHANGES
+        # ---------------------------------------------
+
+        if old_status != obj.status:
+
+            resident = obj.resident
+
+            user = resident.user
+
+            if not user:
+                return
+
+            status_text = obj.get_status_display()
+
+            certificate_name = (
+                obj.get_certificate_type_display()
+            )
+
+            title = (
+                f'Certificate Request {status_text}'
+            )
+
+            message = (
+                f'Your {certificate_name} request '
+                f'({obj.reference_no}) '
+                f'is now {status_text.lower()}.'
+            )
+
+            if obj.remarks:
+
+                message += (
+                    f'\n\nRemarks: {obj.remarks}'
+                )
+
+            # =========================================
+            # WEBSITE NOTIFICATION
+            # =========================================
+
+            Notification.objects.create(
+                user=user,
+                title=title,
+                message=message,
+                url=f'/requests/{obj.pk}/'
+            )
+
+            print(
+                f'NOTIFICATION CREATED FOR USER: '
+                f'{user.username}'
+            )
+
+            # =========================================
+            # EMAIL
+            # =========================================
+
+            if user.email:
+
+                try:
+
+                    send_mail(
+                        subject=title,
+                        message=message,
+                        from_email=getattr(
+                            settings,
+                            'DEFAULT_FROM_EMAIL',
+                            settings.EMAIL_HOST_USER
+                        ),
+                        recipient_list=[
+                            user.email
+                        ],
+                        fail_silently=False,
+                    )
+
+                    print(
+                        f'EMAIL SENT TO: {user.email}'
+                    )
+
+                except Exception as e:
+
+                    print(
+                        f'EMAIL ERROR: {repr(e)}'
+                    )
+
+            else:
+
+                print(
+                    f'EMAIL NOT SENT: '
+                    f'{user.username} has no email.'
+                )
+
+
+# =========================================================
+# NOTIFICATIONS
+# =========================================================
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
+
     list_display = (
-        'title',
         'user',
+        'title',
         'is_read',
         'created_at',
     )
 
     list_filter = (
         'is_read',
+        'created_at',
     )
 
+    search_fields = (
+        'user__username',
+        'title',
+        'message',
+    )
+
+    readonly_fields = (
+        'created_at',
+    )
+
+
+# =========================================================
+# ACTIVITY LOG
+# =========================================================
 
 @admin.register(ActivityLog)
 class ActivityLogAdmin(admin.ModelAdmin):
+
     list_display = (
-        'action',
         'user',
+        'action',
         'created_at',
     )
 
     list_filter = (
+        'created_at',
+    )
+
+    search_fields = (
         'action',
+        'detail',
+        'user__username',
+    )
+
+    readonly_fields = (
+        'created_at',
     )
