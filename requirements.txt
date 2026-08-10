@@ -10,3 +10,4 @@ psycopg2-binary>=2.9
 cloudinary>=1.44
 django-cloudinary-storage>=0.3
 gunicorn>=23.0
+WeasyPrint>=62.0
