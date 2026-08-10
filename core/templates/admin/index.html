@@ -7,304 +7,548 @@
 {{ block.super }}
 
 <style>
-    /* MAIN */
+/* =========================================================
+   PROFESSIONAL BARANGAY ADMIN DASHBOARD
+   ========================================================= */
+
+:root {
+    --bg: #0f172a;
+    --surface: #172033;
+    --surface-2: #1d293b;
+    --surface-3: #243247;
+    --border: #2c3a4f;
+
+    --text: #f8fafc;
+    --muted: #94a3b8;
+
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+
+    --success: #10b981;
+    --warning: #f59e0b;
+    --info: #38bdf8;
+
+    --shadow: 0 8px 25px rgba(0, 0, 0, .20);
+}
+
+/* PAGE */
+
+html,
+body {
+    background: var(--bg) !important;
+}
+
+body {
+    color: var(--text) !important;
+}
+
+/* TOP DJANGO ADMIN HEADER */
+
+#header {
+    background: #111c2e !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,.20);
+}
+
+#branding h1,
+#branding h1 a {
+    color: #ffffff !important;
+}
+
+#user-tools,
+#user-tools a {
+    color: #cbd5e1 !important;
+}
+
+#user-tools a:hover {
+    color: #ffffff !important;
+}
+
+/* CONTENT */
+
+#content {
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 32px !important;
+    background: var(--bg) !important;
+}
+
+.dashboard {
+    width: 100%;
+    max-width: 1450px;
+    margin: 0 auto;
+}
+
+/* =========================================================
+   PAGE TITLE
+   ========================================================= */
+
+.page-heading {
+    margin-bottom: 28px;
+}
+
+.page-heading h1 {
+    margin: 0;
+    color: var(--text);
+    font-size: 30px;
+    font-weight: 650;
+    letter-spacing: -.4px;
+}
+
+.page-heading p {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+/* =========================================================
+   STAT CARDS
+   ========================================================= */
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 26px;
+}
+
+.stat-card {
+    min-height: 142px;
+    padding: 21px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    transition: .2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    border-color: #3b4d66;
+}
+
+.stat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+    background: #22314a;
+
+    font-size: 19px;
+}
+
+.stat-value {
+    margin-top: 22px;
+
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+/* Different icon accents */
+
+.stat-card:nth-child(1) .stat-icon {
+    color: var(--info);
+}
+
+.stat-card:nth-child(2) .stat-icon {
+    color: var(--primary);
+}
+
+.stat-card:nth-child(3) .stat-icon {
+    color: var(--success);
+}
+
+.stat-card:nth-child(4) .stat-icon {
+    color: var(--warning);
+}
+
+/* =========================================================
+   MAIN CONTENT
+   ========================================================= */
+
+.main-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(330px, .9fr);
+    gap: 22px;
+    align-items: start;
+}
+
+/* PANELS */
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.panel-header {
+    padding: 20px 22px;
+    border-bottom: 1px solid var(--border);
+    background: #192438;
+}
+
+.panel-header h2 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.panel-header p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* =========================================================
+   MANAGEMENT MODULES
+   ========================================================= */
+
+.module {
+    padding: 20px 22px;
+    border-bottom: 1px solid #263348;
+}
+
+.module:last-child {
+    border-bottom: 0;
+}
+
+.module-title {
+    margin-bottom: 13px;
+
+    color: #60a5fa;
+    font-size: 12px;
+    font-weight: 700;
+
+    text-transform: uppercase;
+    letter-spacing: .8px;
+}
+
+/* MODELS */
+
+.models {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.model {
+    min-height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding: 12px 14px;
+
+    background: var(--surface-2);
+    border: 1px solid #2b3a50;
+    border-radius: 8px;
+
+    transition: .18s ease;
+}
+
+.model:hover {
+    background: var(--surface-3);
+    border-color: #3d526c;
+}
+
+.model-name {
+    color: #e2e8f0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* BUTTONS */
+
+.buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.buttons a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 48px;
+
+    padding: 6px 9px;
+
+    border-radius: 5px;
+
+    text-decoration: none !important;
+
+    font-size: 11px;
+    font-weight: 600;
+
+    transition: .15s ease;
+}
+
+.view {
+    background: #285a8f;
+    color: #ffffff !important;
+}
+
+.add {
+    background: #18794e;
+    color: #ffffff !important;
+}
+
+.view:hover,
+.add:hover {
+    opacity: .85;
+}
+
+/* =========================================================
+   RECENT ACTIONS
+   ========================================================= */
+
+.recent {
+    padding: 5px 22px 18px;
+}
+
+.recent-item {
+    padding: 16px 0;
+
+    color: #dbe4ee;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    border-bottom: 1px solid #29364a;
+}
+
+.recent-item:last-child {
+    border-bottom: none;
+}
+
+.recent-time {
+    margin-bottom: 5px;
+
+    color: #718198;
+
+    font-size: 11px;
+}
+
+.empty {
+    padding: 24px 0;
+
+    color: #718198;
+    font-size: 13px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1150px) {
+
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+
     #content {
-        padding: 32px !important;
-        background: #f5f7fa !important;
+        padding: 20px !important;
     }
 
-    #content-main {
-        width: 100% !important;
-        float: none !important;
+    .page-heading h1 {
+        font-size: 25px;
     }
 
-    .dashboard-wrapper {
-        max-width: 1400px;
-        margin: 0 auto;
+    .stats {
+        grid-template-columns: 1fr;
     }
 
-    /* HEADER */
-    .dashboard-header {
-        background: #ffffff;
-        border-radius: 14px;
-        padding: 28px 32px;
-        margin-bottom: 24px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    .models {
+        grid-template-columns: 1fr;
     }
 
-    .dashboard-header h1 {
-        margin: 0;
-        color: #172033;
-        font-size: 28px;
-        font-weight: 700;
+    .model {
+        min-height: 60px;
     }
+}
 
-    .dashboard-header p {
-        margin: 7px 0 0;
-        color: #6b7280;
-        font-size: 14px;
-    }
+@media (max-width: 450px) {
 
-    /* STAT CARDS */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
-        margin-bottom: 24px;
+    #content {
+        padding: 14px !important;
     }
 
     .stat-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        padding: 22px;
-        box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        min-height: 125px;
     }
 
-    .stat-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .stat-title {
-        color: #6b7280;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .stat-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #eef6fb;
-        font-size: 20px;
-    }
-
-    .stat-number {
-        margin-top: 15px;
-        color: #172033;
-        font-size: 28px;
-        font-weight: 700;
-    }
-
-    /* CONTENT GRID */
-    .content-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
-        gap: 24px;
-        align-items: start;
-    }
-
-    .card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 14px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,.04);
-    }
-
-    .card-header {
-        padding: 22px 24px;
-        border-bottom: 1px solid #edf0f3;
-    }
-
-    .card-header h2 {
-        margin: 0;
-        color: #172033;
-        font-size: 18px;
-        font-weight: 700;
-    }
-
-    .card-header p {
-        margin: 5px 0 0;
-        color: #7b8494;
-        font-size: 13px;
-    }
-
-    /* MODULES */
+    .panel-header,
     .module {
-        padding: 20px 24px;
-        border-bottom: 1px solid #edf0f3;
+        padding-left: 16px;
+        padding-right: 16px;
     }
-
-    .module:last-child {
-        border-bottom: none;
-    }
-
-    .module-title {
-        margin-bottom: 13px;
-        color: #28789d;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-    }
-
-    .model-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-    }
-
-    .model-row {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 10px 12px;
-        background: #f8fafc;
-        border: 1px solid #e7ebf0;
-        border-radius: 9px;
-    }
-
-    .model-name {
-        color: #303846;
-        font-size: 13px;
-        font-weight: 600;
-    }
-
-    .model-actions {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
-    }
-
-    .model-actions a {
-        text-decoration: none !important;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 6px 9px;
-        border-radius: 6px;
-    }
-
-    .view-btn {
-        color: #236783 !important;
-        background: #e8f4f9;
-    }
-
-    .add-btn {
-        color: #28713b !important;
-        background: #eaf7ed;
-    }
-
-    /* RECENT ACTIONS */
-    .recent-list {
-        padding: 8px 24px 20px;
-    }
-
-    .recent-item {
-        padding: 15px 0;
-        border-bottom: 1px solid #edf0f3;
-        color: #374151;
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    .recent-item:last-child {
-        border-bottom: none;
-    }
-
-    .recent-time {
-        margin-bottom: 4px;
-        color: #9ca3af;
-        font-size: 11px;
-    }
-
-    .empty {
-        padding: 20px 0;
-        color: #9ca3af;
-        font-size: 13px;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 1100px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-
-        .content-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-
-    @media (max-width: 700px) {
-        #content {
-            padding: 18px !important;
-        }
-
-        .stats-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .model-list {
-            grid-template-columns: 1fr;
-        }
-    }
+}
 </style>
+
 {% endblock %}
 
 
 {% block content %}
 
-<div class="dashboard-wrapper">
+<div class="dashboard">
 
-    <div class="dashboard-header">
+    <!-- PAGE HEADER -->
+
+    <div class="page-heading">
+
         <h1>Barangay Management Dashboard</h1>
-        <p>Welcome to Barangay Maniwaya administration portal.</p>
-    </div>
 
-
-    <div class="stats-grid">
-
-        <div class="stat-card">
-            <div class="stat-top">
-                <div class="stat-title">Residents</div>
-                <div class="stat-icon">👥</div>
-            </div>
-            <div class="stat-number">—</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-top">
-                <div class="stat-title">Certificate Requests</div>
-                <div class="stat-icon">📄</div>
-            </div>
-            <div class="stat-number">—</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-top">
-                <div class="stat-title">Approved Requests</div>
-                <div class="stat-icon">✓</div>
-            </div>
-            <div class="stat-number">—</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-top">
-                <div class="stat-title">Notifications</div>
-                <div class="stat-icon">🔔</div>
-            </div>
-            <div class="stat-number">—</div>
-        </div>
+        <p>
+            Welcome to Barangay Maniwaya Administration
+        </p>
 
     </div>
 
 
-    <div class="content-grid">
+    <!-- STATISTICS -->
 
-        <div class="card">
+    <div class="stats">
 
-            <div class="card-header">
-                <h2>Management</h2>
-                <p>Manage residents, certificates and barangay records.</p>
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span class="stat-label">
+                    Residents
+                </span>
+
+                <div class="stat-icon">
+                    👥
+                </div>
+
             </div>
+
+            <div class="stat-value">
+                —
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span class="stat-label">
+                    Certificate Requests
+                </span>
+
+                <div class="stat-icon">
+                    📄
+                </div>
+
+            </div>
+
+            <div class="stat-value">
+                —
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span class="stat-label">
+                    Approved Requests
+                </span>
+
+                <div class="stat-icon">
+                    ✓
+                </div>
+
+            </div>
+
+            <div class="stat-value">
+                —
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+
+                <span class="stat-label">
+                    Notifications
+                </span>
+
+                <div class="stat-icon">
+                    🔔
+                </div>
+
+            </div>
+
+            <div class="stat-value">
+                —
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- MAIN -->
+
+    <div class="main-grid">
+
+
+        <!-- MANAGEMENT -->
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Management
+                </h2>
+
+                <p>
+                    Manage barangay records, residents and services.
+                </p>
+
+            </div>
+
 
             {% for app in app_list %}
 
@@ -314,28 +558,41 @@
                     {{ app.name }}
                 </div>
 
-                <div class="model-list">
+
+                <div class="models">
 
                     {% for model in app.models %}
 
-                    <div class="model-row">
+                    <div class="model">
 
                         <span class="model-name">
                             {{ model.name }}
                         </span>
 
-                        <div class="model-actions">
+
+                        <div class="buttons">
 
                             {% if model.admin_url %}
-                            <a href="{{ model.admin_url }}" class="view-btn">
+
+                            <a
+                                href="{{ model.admin_url }}"
+                                class="view"
+                            >
                                 View
                             </a>
+
                             {% endif %}
 
+
                             {% if model.add_url %}
-                            <a href="{{ model.add_url }}" class="add-btn">
+
+                            <a
+                                href="{{ model.add_url }}"
+                                class="add"
+                            >
                                 + Add
                             </a>
+
                             {% endif %}
 
                         </div>
@@ -351,9 +608,11 @@
             {% empty %}
 
             <div class="module">
+
                 <div class="empty">
                     No management modules available.
                 </div>
+
             </div>
 
             {% endfor %}
@@ -361,16 +620,27 @@
         </div>
 
 
-        <div class="card">
+        <!-- RECENT ACTIONS -->
 
-            <div class="card-header">
-                <h2>Recent Actions</h2>
-                <p>Latest activity in the system.</p>
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>
+                    Recent Actions
+                </h2>
+
+                <p>
+                    Latest activity in the system.
+                </p>
+
             </div>
 
-            <div class="recent-list">
+
+            <div class="recent">
 
                 {% get_admin_log 8 as admin_log %}
+
 
                 {% if admin_log %}
 
@@ -382,12 +652,27 @@
                             {{ entry.action_time|date:"M d, Y • h:i A" }}
                         </div>
 
+
                         {% if entry.is_deletion %}
-                            Deleted {{ entry.object_repr }}
+
+                            🗑 Deleted {{ entry.object_repr }}
+
                         {% elif entry.is_addition %}
-                            Added {{ entry.object_repr }}
+
+                            <span style="color:#34d399;">
+                                + Added
+                            </span>
+
+                            {{ entry.object_repr }}
+
                         {% else %}
-                            Changed {{ entry.object_repr }}
+
+                            <span style="color:#60a5fa;">
+                                ✎ Changed
+                            </span>
+
+                            {{ entry.object_repr }}
+
                         {% endif %}
 
                     </div>
