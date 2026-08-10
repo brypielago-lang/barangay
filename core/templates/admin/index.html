@@ -1,0 +1,416 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Barangay Management Dashboard{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<style>
+    /* ================================
+       BARANGAY ADMIN DASHBOARD
+       ================================ */
+
+    #content {
+        padding: 0 !important;
+    }
+
+    .dashboard-wrapper {
+        padding: 25px 35px 40px;
+    }
+
+    .dashboard-header {
+        margin-bottom: 25px;
+    }
+
+    .dashboard-header h1 {
+        margin: 0 0 7px;
+        font-size: 30px;
+        font-weight: 600;
+        color: #f5f5f5;
+    }
+
+    .dashboard-header p {
+        margin: 0;
+        color: #aaa;
+        font-size: 14px;
+    }
+
+    /* STAT CARDS */
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: #1f1f1f;
+        border: 1px solid #303030;
+        border-radius: 12px;
+        padding: 20px;
+        min-height: 115px;
+        box-sizing: border-box;
+        transition: 0.2s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: #4f91b0;
+    }
+
+    .stat-icon {
+        font-size: 25px;
+        margin-bottom: 10px;
+    }
+
+    .stat-title {
+        color: #aaa;
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+
+    .stat-number {
+        color: #fff;
+        font-size: 27px;
+        font-weight: 600;
+    }
+
+    /* MAIN GRID */
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+        gap: 25px;
+        align-items: start;
+    }
+
+    /* MANAGEMENT */
+
+    .management-card,
+    .activity-card {
+        background: #1b1b1b;
+        border: 1px solid #303030;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #303030;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        color: #fff;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .card-header p {
+        margin: 5px 0 0;
+        color: #888;
+        font-size: 13px;
+    }
+
+    .app-section {
+        padding: 18px 20px;
+        border-bottom: 1px solid #292929;
+    }
+
+    .app-section:last-child {
+        border-bottom: none;
+    }
+
+    .app-title {
+        margin: 0 0 12px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #64b5d5;
+    }
+
+    .model-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .model-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #242424;
+        border: 1px solid #303030;
+        border-radius: 8px;
+        padding: 12px 14px;
+        transition: 0.2s ease;
+    }
+
+    .model-item:hover {
+        background: #292929;
+        border-color: #4f91b0;
+    }
+
+    .model-name {
+        color: #ddd;
+        font-size: 14px;
+    }
+
+    .model-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .model-actions a {
+        text-decoration: none !important;
+        font-size: 12px;
+        padding: 5px 9px;
+        border-radius: 5px;
+    }
+
+    .view-btn {
+        background: #356f89;
+        color: white !important;
+    }
+
+    .add-btn {
+        background: #3b7d42;
+        color: white !important;
+    }
+
+    /* RECENT ACTIONS */
+
+    .activity-body {
+        padding: 15px 20px 20px;
+    }
+
+    .activity-item {
+        padding: 12px 0;
+        border-bottom: 1px solid #292929;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-time {
+        color: #777;
+        font-size: 11px;
+        margin-bottom: 4px;
+    }
+
+    .activity-text {
+        color: #ddd;
+        font-size: 13px;
+    }
+
+    .empty-message {
+        color: #888;
+        font-size: 13px;
+        padding: 15px 0;
+    }
+
+    /* RESPONSIVE */
+
+    @media (max-width: 1000px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 650px) {
+        .dashboard-wrapper {
+            padding: 20px 15px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .model-list {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="dashboard-wrapper">
+
+    <!-- HEADER -->
+
+    <div class="dashboard-header">
+        <h1>Barangay Management Dashboard</h1>
+        <p>Manage residents, certificates, requests, templates, and barangay services.</p>
+    </div>
+
+
+    <!-- STAT CARDS -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <div class="stat-icon">👥</div>
+            <div class="stat-title">Residents</div>
+            <div class="stat-number">—</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-title">Certificate Requests</div>
+            <div class="stat-number">—</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-title">Approved Requests</div>
+            <div class="stat-number">—</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🔔</div>
+            <div class="stat-title">Notifications</div>
+            <div class="stat-number">—</div>
+        </div>
+
+    </div>
+
+
+    <!-- MAIN CONTENT -->
+
+    <div class="dashboard-grid">
+
+        <!-- MANAGEMENT -->
+
+        <div class="management-card">
+
+            <div class="card-header">
+                <h2>Management</h2>
+                <p>Quick access to your barangay records and services.</p>
+            </div>
+
+            {% for app in app_list %}
+
+                <div class="app-section">
+
+                    <h3 class="app-title">
+                        {{ app.name }}
+                    </h3>
+
+                    <div class="model-list">
+
+                        {% for model in app.models %}
+
+                            <div class="model-item">
+
+                                <span class="model-name">
+                                    {{ model.name }}
+                                </span>
+
+                                <div class="model-actions">
+
+                                    {% if model.admin_url %}
+                                        <a href="{{ model.admin_url }}"
+                                           class="view-btn">
+                                            View
+                                        </a>
+                                    {% endif %}
+
+                                    {% if model.add_url %}
+                                        <a href="{{ model.add_url }}"
+                                           class="add-btn">
+                                            + Add
+                                        </a>
+                                    {% endif %}
+
+                                </div>
+
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            {% empty %}
+
+                <div class="app-section">
+                    <div class="empty-message">
+                        No management modules available.
+                    </div>
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+
+        <!-- RECENT ACTIONS -->
+
+        <div class="activity-card">
+
+            <div class="card-header">
+                <h2>Recent Actions</h2>
+                <p>Your latest activity in the admin panel.</p>
+            </div>
+
+            <div class="activity-body">
+
+                {% load log %}
+
+                {% get_admin_log 8 as admin_log %}
+
+                {% if admin_log %}
+
+                    {% for entry in admin_log %}
+
+                        <div class="activity-item">
+
+                            <div class="activity-time">
+                                {{ entry.action_time|date:"M d, Y • h:i A" }}
+                            </div>
+
+                            <div class="activity-text">
+
+                                {% if entry.is_deletion %}
+                                    🗑️ Deleted {{ entry.object_repr }}
+
+                                {% elif entry.is_addition %}
+                                    ➕ Added {{ entry.object_repr }}
+
+                                {% else %}
+                                    ✏️ Changed {{ entry.object_repr }}
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="empty-message">
+                        No recent actions available.
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
