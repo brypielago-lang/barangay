@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Certificate of Residency</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #111;
+        }
+
+        .certificate {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm 24mm 20mm 24mm;
+            margin: auto;
+            background: white;
+        }
+
+        /* HEADER */
+        .header {
+            text-align: center;
+            position: relative;
+            min-height: 48mm;
+        }
+
+        .barangay-logo {
+            position: absolute;
+            left: 8mm;
+            top: 2mm;
+            width: 32mm;
+            height: 32mm;
+            object-fit: contain;
+        }
+
+        .header-text {
+            text-align: center;
+            line-height: 1.25;
+            padding-top: 2mm;
+        }
+
+        .province {
+            font-size: 14px;
+        }
+
+        .municipality {
+            font-size: 14px;
+        }
+
+        .barangay-name {
+            font-size: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .office {
+            margin-top: 8mm;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* TITLE */
+        .title {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 4mm;
+            margin-bottom: 12mm;
+        }
+
+        /* BODY */
+        .content {
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .to-whom {
+            font-weight: bold;
+            margin-bottom: 10mm;
+        }
+
+        .paragraph {
+            text-align: justify;
+            text-indent: 15mm;
+            margin-bottom: 7mm;
+        }
+
+        .highlight {
+            font-weight: bold;
+        }
+
+        /* SIGNATURE */
+        .signature-area {
+            margin-top: 30mm;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .signature {
+            width: 60mm;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #111;
+            height: 12mm;
+            margin-bottom: 2mm;
+        }
+
+        .captain {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .captain-position {
+            font-size: 13px;
+        }
+
+        /* PRINT */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .certificate {
+                margin: 0;
+                width: 210mm;
+                min-height: 297mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="certificate">
+
+    <!-- HEADER -->
+    <div class="header">
+
+        {% if barangay.logo %}
+            <img
+                src="{{ barangay.logo.url }}"
+                class="barangay-logo"
+                alt="Barangay Logo"
+            >
+        {% endif %}
+
+        <div class="header-text">
+
+            <div class="province">
+                Province of {{ barangay.province }}
+            </div>
+
+            <div class="municipality">
+                Municipality of {{ barangay.municipality }}
+            </div>
+
+            <div class="barangay-name">
+                BARANGAY {{ barangay.name }}
+            </div>
+
+            <div class="office">
+                OFFICE OF THE BARANGAY CAPTAIN
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TITLE -->
+    <div class="title">
+        CERTIFICATE OF RESIDENCY
+    </div>
+
+
+    <!-- BODY -->
+    <div class="content">
+
+        <div class="to-whom">
+            TO WHOM IT MAY CONCERN:
+        </div>
+
+
+        <p class="paragraph">
+            This is to certify that,
+            <strong>
+                {{ resident.full_name|upper }}
+            </strong>,
+            of legal age,
+            {{ resident.get_civil_status_display|lower }},
+            Filipino citizen,
+            whose specimen signature appears below,
+            is a
+            <strong>PERMANENT RESIDENT</strong>
+            of this Barangay
+            <strong>{{ barangay.name }}</strong>,
+            {{ barangay.municipality }},
+            {{ barangay.province }}.
+        </p>
+
+
+        <p class="paragraph">
+            Based on the records of this office,
+            he/she has been residing at
+            <strong>
+                {{ resident.address }}
+            </strong>,
+            {{ barangay.name }},
+            {{ barangay.municipality }},
+            {{ barangay.province }}.
+        </p>
+
+
+        <p class="paragraph">
+            This
+            <strong>CERTIFICATION</strong>
+            is being issued upon the request of the above-named
+            person for
+            <strong>
+                {{ item.purpose }}
+            </strong>
+            and for whatever legal purpose it may serve.
+        </p>
+
+
+        <p class="paragraph">
+            Issued this
+            <strong>
+                {{ item.requested_at|date:"jS" }}
+            </strong>
+            day of
+            <strong>
+                {{ item.requested_at|date:"F, Y" }}
+            </strong>
+            at Barangay
+            <strong>{{ barangay.name }}</strong>,
+            {{ barangay.municipality }},
+            {{ barangay.province }},
+            Philippines.
+        </p>
+
+    </div>
+
+
+    <!-- SIGNATURE -->
+    <div class="signature-area">
+
+        <div class="signature">
+
+            <div class="signature-line"></div>
+
+            <div class="captain">
+                {{ barangay.captain_name }}
+            </div>
+
+            <div class="captain-position">
+                Punong Barangay
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
