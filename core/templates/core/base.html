@@ -207,43 +207,50 @@
 
     {% if user.is_authenticated and not user.is_staff %}
 
-        <nav class="bottom-nav">
+    <nav class="bottom-nav">
 
-            <a
-                class="active"
-                href="{% url 'dashboard' %}"
-            >
-                <i class="bi bi-house-door"></i>
-                Home
-            </a>
-
-
-            <a
-                href="{% url 'request_create' %}"
-            >
-                <i class="bi bi-file-earmark-text"></i>
-                Request
-            </a>
+        <!-- HOME -->
+        <a
+            class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+            href="{% url 'dashboard' %}"
+        >
+            <i class="bi bi-house-door"></i>
+            Home
+        </a>
 
 
-            <a
-                href="{% url 'profile' %}"
-            >
-                <i class="bi bi-person"></i>
-                Profile
-            </a>
+        <!-- REQUEST -->
+        <a
+            class="{% if request.resolver_match.url_name == 'request_create' %}active{% endif %}"
+            href="{% url 'request_create' %}"
+        >
+            <i class="bi bi-file-earmark-text"></i>
+            Request
+        </a>
 
 
-            <a
-                href="{% url 'notifications' %}"
-            >
-                <i class="bi bi-bell"></i>
-                Notifs
-            </a>
+        <!-- PROFILE -->
+        <a
+            class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
+            href="{% url 'profile' %}"
+        >
+            <i class="bi bi-person"></i>
+            Profile
+        </a>
 
-        </nav>
 
-    {% endif %}
+        <!-- NOTIFICATIONS -->
+        <a
+            class="{% if request.resolver_match.url_name == 'notifications' %}active{% endif %}"
+            href="{% url 'notifications' %}"
+        >
+            <i class="bi bi-bell"></i>
+            Notifs
+        </a>
+
+    </nav>
+
+{% endif %}
 
 
     <!-- =========================
