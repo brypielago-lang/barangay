@@ -91,9 +91,12 @@ def certificate_pdf(request, pk):
         pk=pk
     )
 
+    # User can only view their own certificate
+    # Staff can view any certificate
     if not request.user.is_staff and obj.resident.user_id != request.user.id:
         raise Http404
 
+    # Certificate must be approved or released
     if obj.status not in ('approved', 'released'):
         messages.error(
             request,
@@ -101,54 +104,73 @@ def certificate_pdf(request, pk):
         )
         return redirect('request_detail', pk=pk)
 
-    template = CertificateTemplate.objects.filter(
+    # Select the correct certificate HTML template
+    certificate_templates = {
+        'indigency': 'core/certificates/indigency.html',
+        'clearance': 'core/certificates/clearance.html',
+        'residency': 'core/certificates/residency.html',
+        'business': 'core/certificates/business.html',
+        'good_moral': 'core/certificates/good_moral.html',
+    }
+
+    template_name = certificate_templates.get(
+        obj.certificate_type,
+        'core/certificates/default.html'
+    )
+
+    # Barangay information
+    barangay = BarangayProfile.objects.first()
+
+    if not barangay:
+        barangay = BarangayProfile()
+
+    # Get editable template from Django Admin
+    certificate_template = CertificateTemplate.objects.filter(
         certificate_type=obj.certificate_type
     ).first()
 
-    barangay = BarangayProfile.objects.first() or BarangayProfile()
+    # Certificate title
+    if certificate_template:
+        title = certificate_template.title
+    else:
+        title = obj.get_certificate_type_display()
 
-    title = (
-        template.title
-        if template
-        else obj.get_certificate_type_display()
-    )
+    # Certificate body
+    body = ''
 
-    default_body = """
-    This is to certify that <strong>{{ resident.full_name }}</strong>,
-    a bona fide resident of <strong>{{ barangay.name }}</strong>,
-    {{ barangay.municipality }}, {{ barangay.province }},
-    is known to this office and has no derogatory record on file.
+    if certificate_template and certificate_template.body:
+        body = Template(
+            certificate_template.body
+        ).render(
+            Context({
+                'resident': obj.resident,
+                'request': obj,
+                'barangay': barangay,
+            })
+        )
 
-    This certification is issued upon the request of the
-    above-named person for <strong>{{ request.purpose }}</strong>.
-
-    Issued for whatever legal purpose this may serve.
-    """
-
-    body_template = template.body if template else default_body
-
-    body = Template(body_template).render(
-        Context({
-            'resident': obj.resident,
-            'request': obj,
-            'barangay': barangay,
-        })
-    )
-
+    # Template context
     context = {
         'item': obj,
+        'resident': obj.resident,
+        'request': obj,
         'barangay': barangay,
         'title': title,
         'body': body,
-        'footer': template.footer if template else '',
+        'footer': (
+            certificate_template.footer
+            if certificate_template
+            else ''
+        ),
     }
 
+    # Download as PDF
     if request.GET.get('download') == 'pdf':
         try:
             from weasyprint import HTML
 
             html = render_to_string(
-                'core/certificate_print.html',
+                template_name,
                 context,
                 request=request
             )
@@ -175,9 +197,10 @@ def certificate_pdf(request, pk):
                 'PDF support is unavailable; use browser print to save as PDF.'
             )
 
+    # Show certificate in browser
     return render(
         request,
-        'core/certificate_print.html',
+        template_name,
         context
     )
 
