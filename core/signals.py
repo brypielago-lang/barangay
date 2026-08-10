@@ -19,11 +19,21 @@ def create_admin_user(sender, **kwargs):
 
     User = get_user_model()
 
-    if User.objects.filter(username=username).exists():
-        return
-
-    User.objects.create_superuser(
+    user, created = User.objects.get_or_create(
         username=username,
-        email=email or "",
-        password=password,
+        defaults={
+            "email": email or "",
+            "is_staff": True,
+            "is_superuser": True,
+        },
     )
+
+    if created:
+        user.set_password(password)
+    else:
+        user.email = email or user.email
+        user.is_staff = True
+        user.is_superuser = True
+        user.set_password(password)
+
+    user.save()
