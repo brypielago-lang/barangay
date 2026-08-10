@@ -30,7 +30,9 @@ from .models import (
 # =========================================================
 
 def staff_required(view):
-    return user_passes_test(lambda u: u.is_staff)(view)
+    return user_passes_test(
+        lambda u: u.is_staff
+    )(view)
 
 
 # =========================================================
@@ -46,126 +48,75 @@ def log(user, action, detail=''):
 
 
 # =========================================================
-# NOTIFICATION
+# NOTIFICATION + EMAIL
 # =========================================================
 
 def notify_request(request_obj, title, message):
-    if request_obj.resident.user:
+
+    resident = request_obj.resident
+    user = resident.user
+
+    if not user:
+        print("NOTIFICATION ERROR: Resident has no user account.")
+        return
+
+    # -----------------------------------------------------
+    # IN-APP NOTIFICATION
+    # -----------------------------------------------------
+
+    try:
+
         Notification.objects.create(
-            user=request_obj.resident.user,
+            user=user,
             title=title,
             message=message,
             url=f'/requests/{request_obj.pk}/'
         )
 
-
-# =========================================================
-# EMAIL NOTIFICATION
-# =========================================================
-
-def email_request_status(request_obj, status):
-    """
-    Send an email notification to the resident.
-
-    This function does not stop the request from being
-    approved/rejected if the email fails.
-    """
-
-    user = request_obj.resident.user
-
-    if not user:
-        return
-
-    email = user.email
-
-    if not email:
-        return
-
-    barangay = BarangayProfile.objects.first()
-
-    if barangay:
-        barangay_name = barangay.name
-    else:
-        barangay_name = 'Barangay'
-
-    certificate_name = (
-        request_obj.get_certificate_type_display()
-    )
-
-    if status == 'approved':
-
-        subject = (
-            f'{barangay_name} - Certificate Request Approved'
-        )
-
-        message = f"""
-Hello {request_obj.resident.full_name},
-
-Your certificate request has been APPROVED.
-
-Request Details
--------------------------
-Reference No.: {request_obj.reference_no}
-Certificate: {certificate_name}
-Purpose: {request_obj.purpose}
-Status: APPROVED
-
-You can now log in to your Barangay Resident Portal
-to print or download your certificate.
-
-Thank you.
-
-{barangay_name}
-Barangay Resident Portal
-"""
-
-    elif status == 'rejected':
-
-        subject = (
-            f'{barangay_name} - Certificate Request Update'
-        )
-
-        message = f"""
-Hello {request_obj.resident.full_name},
-
-Your certificate request has been REJECTED.
-
-Request Details
--------------------------
-Reference No.: {request_obj.reference_no}
-Certificate: {certificate_name}
-Status: REJECTED
-
-Remarks:
-{request_obj.remarks or 'No remarks provided.'}
-
-Please log in to your Barangay Resident Portal
-for more information.
-
-Thank you.
-
-{barangay_name}
-Barangay Resident Portal
-"""
-
-    else:
-        return
-
-    try:
-
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=None,
-            recipient_list=[email],
-            fail_silently=True
+        print(
+            f"NOTIFICATION SENT TO USER: {user.username}"
         )
 
     except Exception as e:
 
         print(
-            'EMAIL NOTIFICATION ERROR:',
+            "NOTIFICATION ERROR:",
             repr(e)
+        )
+
+    # -----------------------------------------------------
+    # EMAIL
+    # -----------------------------------------------------
+
+    if user.email:
+
+        try:
+
+            send_mail(
+                subject=title,
+                message=message,
+                from_email=None,
+                recipient_list=[
+                    user.email
+                ],
+                fail_silently=False
+            )
+
+            print(
+                f"EMAIL SENT TO: {user.email}"
+            )
+
+        except Exception as e:
+
+            print(
+                "EMAIL ERROR:",
+                repr(e)
+            )
+
+    else:
+
+        print(
+            "EMAIL NOT SENT: User has no email address."
         )
 
 
@@ -177,7 +128,9 @@ def signup(request):
 
     if request.method == 'POST':
 
-        form = SignUpForm(request.POST)
+        form = SignUpForm(
+            request.POST
+        )
 
         if form.is_valid():
 
@@ -223,9 +176,9 @@ def dashboard(request):
         None
     )
 
-    # =====================================================
-    # STAFF / ADMIN DASHBOARD
-    # =====================================================
+    # -----------------------------------------------------
+    # ADMIN DASHBOARD
+    # -----------------------------------------------------
 
     if request.user.is_staff:
 
@@ -248,7 +201,8 @@ def dashboard(request):
 
             'recent':
                 CertificateRequest.objects
-                .select_related('resident')[:8],
+                .select_related('resident')
+                [:8],
         }
 
         return render(
@@ -257,20 +211,27 @@ def dashboard(request):
             context
         )
 
-    # =====================================================
-    # RESIDENT DASHBOARD
-    # =====================================================
+    # -----------------------------------------------------
+    # USER DASHBOARD
+    # -----------------------------------------------------
+
+    recent = []
+
+    if profile:
+
+        recent = (
+            profile.requests
+            .all()
+            .order_by('-requested_at')
+            [:5]
+        )
 
     return render(
         request,
         'core/dashboard.html',
         {
             'profile': profile,
-
-            'recent':
-                profile.requests.all()[:5]
-                if profile
-                else []
+            'recent': recent
         }
     )
 
@@ -421,8 +382,8 @@ def request_create(request):
 def request_detail(request, pk):
 
     obj = get_object_or_404(
-        CertificateRequest.objects.select_related(
-            'resident',
+        CertificateRequest.objects
+        .select_related(
             'resident__user'
         ),
         pk=pk
@@ -460,15 +421,27 @@ def staff_requests(request):
 
         items = (
             CertificateRequest.objects
-            .select_related('resident')
-            .filter(status=status)
+            .select_related(
+                'resident'
+            )
+            .filter(
+                status=status
+            )
+            .order_by(
+                '-requested_at'
+            )
         )
 
     else:
 
         items = (
             CertificateRequest.objects
-            .select_related('resident')
+            .select_related(
+                'resident'
+            )
+            .order_by(
+                '-requested_at'
+            )
         )
 
     return render(
@@ -487,86 +460,94 @@ def staff_requests(request):
 
 @staff_required
 def update_request(request, pk):
+
     obj = get_object_or_404(
-        CertificateRequest.objects.select_related('resident__user'),
+        CertificateRequest.objects
+        .select_related(
+            'resident__user'
+        ),
         pk=pk
     )
 
     if request.method == 'POST':
 
-        status = request.POST.get('status')
+        status = request.POST.get(
+            'status'
+        )
 
-        if status in dict(CertificateRequest.STATUS):
+        valid_statuses = dict(
+            CertificateRequest.STATUS
+        )
 
-            old_status = obj.status
+        if status in valid_statuses:
 
             obj.status = status
-            obj.remarks = request.POST.get('remarks', '')
+
+            obj.remarks = request.POST.get(
+                'remarks',
+                ''
+            )
+
             obj.reviewed_by = request.user
 
-            if status in ('approved', 'rejected'):
+            # -------------------------------------------------
+            # APPROVED / REJECTED
+            # -------------------------------------------------
+
+            if status in (
+                'approved',
+                'rejected'
+            ):
+
                 obj.reviewed_at = timezone.now()
 
+            # -------------------------------------------------
+            # RELEASED
+            # -------------------------------------------------
+
             if status == 'released':
+
                 obj.released_at = timezone.now()
 
             obj.save()
 
-            # ==================================================
-            # NOTIFICATION SA USER
-            # ==================================================
+            # -------------------------------------------------
+            # USER NOTIFICATION
+            # -------------------------------------------------
 
-            resident = obj.resident
-            user = resident.user
+            status_text = (
+                obj.get_status_display()
+            )
 
-            if user:
+            certificate_name = (
+                obj.get_certificate_type_display()
+            )
 
-                status_text = status.title()
+            notification_title = (
+                f'Certificate Request {status_text}'
+            )
 
-                notification_title = (
-                    f'Certificate Request {status_text}'
+            notification_message = (
+                f'Your {certificate_name} request '
+                f'({obj.reference_no}) '
+                f'is now {status_text.lower()}.'
+            )
+
+            if obj.remarks:
+
+                notification_message += (
+                    f'\n\nRemarks: {obj.remarks}'
                 )
 
-                notification_message = (
-                    f'Your {obj.get_certificate_type_display()} '
-                    f'request ({obj.reference_no}) '
-                    f'is now {status_text}.'
-                )
+            notify_request(
+                obj,
+                notification_title,
+                notification_message
+            )
 
-                Notification.objects.create(
-                    user=user,
-                    title=notification_title,
-                    message=notification_message,
-                    url=f'/requests/{obj.pk}/'
-                )
-
-                # ==================================================
-                # EMAIL
-                # ==================================================
-
-                try:
-                    from django.core.mail import send_mail
-
-                    if user.email:
-
-                        send_mail(
-                            subject=notification_title,
-                            message=notification_message,
-                            from_email=None,
-                            recipient_list=[user.email],
-                            fail_silently=False
-                        )
-
-                except Exception as e:
-
-                    print(
-                        "EMAIL ERROR:",
-                        repr(e)
-                    )
-
-            # ==================================================
+            # -------------------------------------------------
             # ACTIVITY LOG
-            # ==================================================
+            # -------------------------------------------------
 
             log(
                 request.user,
@@ -576,7 +557,15 @@ def update_request(request, pk):
 
             messages.success(
                 request,
-                f'Request {obj.reference_no} updated to {status}.'
+                f'Request {obj.reference_no} '
+                f'updated to {status_text}.'
+            )
+
+        else:
+
+            messages.error(
+                request,
+                'Invalid request status.'
             )
 
     return redirect(
@@ -586,27 +575,34 @@ def update_request(request, pk):
 
 
 # =========================================================
-# CERTIFICATE / DOCUMENT
+# CERTIFICATE DOCUMENT
 # =========================================================
 
 @login_required
 def certificate_pdf(request, pk):
 
     obj = get_object_or_404(
-        CertificateRequest.objects.select_related(
-            'resident'
+        CertificateRequest.objects
+        .select_related(
+            'resident__user'
         ),
         pk=pk
     )
 
-    # User can only view their own certificate
+    # -----------------------------------------------------
+    # ACCESS CONTROL
+    # -----------------------------------------------------
+
     if (
         not request.user.is_staff
         and obj.resident.user_id != request.user.id
     ):
         raise Http404
 
-    # Certificate must be approved or released
+    # -----------------------------------------------------
+    # APPROVAL CHECK
+    # -----------------------------------------------------
+
     if obj.status not in (
         'approved',
         'released'
@@ -622,9 +618,9 @@ def certificate_pdf(request, pk):
             pk=pk
         )
 
-    # =====================================================
-    # CERTIFICATE TEMPLATES
-    # =====================================================
+    # -----------------------------------------------------
+    # CERTIFICATE TEMPLATE
+    # -----------------------------------------------------
 
     certificate_templates = {
 
@@ -646,22 +642,25 @@ def certificate_pdf(request, pk):
 
     template_name = certificate_templates.get(
         obj.certificate_type,
-        'core/certificates/default.html'
+        'core/default.html'
     )
 
-    # =====================================================
+    # -----------------------------------------------------
     # BARANGAY PROFILE
-    # =====================================================
+    # -----------------------------------------------------
 
-    barangay = BarangayProfile.objects.first()
+    barangay = (
+        BarangayProfile.objects
+        .first()
+    )
 
     if barangay is None:
 
         barangay = BarangayProfile()
 
-    # =====================================================
-    # ADMIN EDITABLE CERTIFICATE TEMPLATE
-    # =====================================================
+    # -----------------------------------------------------
+    # ADMIN CERTIFICATE TEMPLATE
+    # -----------------------------------------------------
 
     certificate_template = (
         CertificateTemplate.objects
@@ -673,7 +672,9 @@ def certificate_pdf(request, pk):
 
     if certificate_template:
 
-        title = certificate_template.title
+        title = (
+            certificate_template.title
+        )
 
         footer = (
             certificate_template.footer
@@ -688,9 +689,9 @@ def certificate_pdf(request, pk):
 
         footer = ''
 
-    # =====================================================
+    # -----------------------------------------------------
     # CERTIFICATE BODY
-    # =====================================================
+    # -----------------------------------------------------
 
     body = ''
 
@@ -699,11 +700,12 @@ def certificate_pdf(request, pk):
         and certificate_template.body
     ):
 
-        body = Template(
-            certificate_template.body
-        ).render(
-            Context(
-                {
+        try:
+
+            body = Template(
+                certificate_template.body
+            ).render(
+                Context({
                     'resident':
                         obj.resident,
 
@@ -712,9 +714,23 @@ def certificate_pdf(request, pk):
 
                     'barangay':
                         barangay,
-                }
+                })
             )
-        )
+
+        except Exception as e:
+
+            print(
+                "CERTIFICATE BODY ERROR:",
+                repr(e)
+            )
+
+            body = (
+                certificate_template.body
+            )
+
+    # -----------------------------------------------------
+    # CONTEXT
+    # -----------------------------------------------------
 
     context = {
 
@@ -768,7 +784,9 @@ def certificate_pdf(request, pk):
                 content_type='application/pdf'
             )
 
-            response['Content-Disposition'] = (
+            response[
+                'Content-Disposition'
+            ] = (
                 f'attachment; '
                 f'filename="{obj.reference_no}.pdf"'
             )
@@ -778,13 +796,13 @@ def certificate_pdf(request, pk):
         except Exception as e:
 
             print(
-                'PDF ERROR:',
+                "PDF ERROR:",
                 repr(e)
             )
 
             messages.error(
                 request,
-                'PDF download failed. Please try Print Document.'
+                'PDF download failed. Please use Print Document.'
             )
 
             return redirect(
@@ -830,7 +848,10 @@ def verify(request, token):
 @login_required
 def notifications(request):
 
-    notes = request.user.notifications.all()
+    notes = (
+        request.user.notifications
+        .all()
+    )
 
     # Mark unread notifications as read
     notes.filter(
@@ -870,7 +891,9 @@ def reports(request):
 
     recent_logs = (
         ActivityLog.objects
-        .select_related('user')[:15]
+        .select_related(
+            'user'
+        )[:15]
     )
 
     return render(
@@ -894,7 +917,9 @@ def report_csv(request):
         content_type='text/csv'
     )
 
-    response['Content-Disposition'] = (
+    response[
+        'Content-Disposition'
+    ] = (
         'attachment; '
         'filename="certificate_requests.csv"'
     )
@@ -903,38 +928,37 @@ def report_csv(request):
         response
     )
 
-    writer.writerow(
-        [
-            'Reference',
-            'Resident',
-            'Type',
-            'Status',
-            'Requested'
-        ]
-    )
+    writer.writerow([
+        'Reference',
+        'Resident',
+        'Type',
+        'Status',
+        'Requested'
+    ])
 
     requests = (
         CertificateRequest.objects
-        .select_related('resident')
+        .select_related(
+            'resident'
+        )
     )
 
     for obj in requests:
 
-        writer.writerow(
-            [
-                obj.reference_no,
+        writer.writerow([
 
-                obj.resident.full_name,
+            obj.reference_no,
 
-                obj.get_certificate_type_display(),
+            obj.resident.full_name,
 
-                obj.status,
+            obj.get_certificate_type_display(),
 
-                obj.requested_at.strftime(
-                    '%Y-%m-%d'
-                )
-            ]
-        )
+            obj.get_status_display(),
+
+            obj.requested_at.strftime(
+                '%Y-%m-%d'
+            )
+        ])
 
     return response
 
