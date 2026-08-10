@@ -11,6 +11,11 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+# =========================================================
+# ENVIRONMENT VARIABLES
+# =========================================================
+
 load_dotenv(BASE_DIR / '.env')
 
 
@@ -30,7 +35,6 @@ CLOUDINARY_API_SECRET = os.getenv(
     'CLOUDINARY_API_SECRET'
 )
 
-
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
     'API_KEY': CLOUDINARY_API_KEY,
@@ -39,7 +43,7 @@ CLOUDINARY_STORAGE = {
 
 
 # =========================================================
-# DJANGO BASIC SETTINGS
+# SECURITY
 # =========================================================
 
 SECRET_KEY = os.getenv(
@@ -47,10 +51,9 @@ SECRET_KEY = os.getenv(
     'unsafe-development-key-change-me'
 )
 
-DEBUG = os.getenv(
-    'DEBUG',
-    'True'
-).lower() == 'true'
+DEBUG = (
+    os.getenv('DEBUG', 'True').lower() == 'true'
+)
 
 ALLOWED_HOSTS = ['*']
 
@@ -100,7 +103,7 @@ MIDDLEWARE = [
 
 
 # =========================================================
-# URL CONFIGURATION
+# URL
 # =========================================================
 
 ROOT_URLCONF = 'config.urls'
@@ -195,7 +198,7 @@ STATICFILES_DIRS = [
 
 
 # =========================================================
-# MEDIA FILES
+# MEDIA
 # =========================================================
 
 MEDIA_URL = '/media/'
@@ -204,14 +207,16 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 
 # =========================================================
-# DEFAULT
+# DEFAULT AUTO FIELD
 # =========================================================
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = (
+    'django.db.models.BigAutoField'
+)
 
 
 # =========================================================
-# LOGIN / LOGOUT
+# LOGIN
 # =========================================================
 
 LOGIN_REDIRECT_URL = 'dashboard'
@@ -222,59 +227,49 @@ LOGIN_URL = 'login'
 
 
 # =========================================================
-# EMAIL CONFIGURATION
+# EMAIL
 # =========================================================
 
 EMAIL_BACKEND = (
     'django.core.mail.backends.smtp.EmailBackend'
 )
 
-
-EMAIL_HOST = os.environ.get(
+EMAIL_HOST = os.getenv(
     'EMAIL_HOST',
     'smtp.gmail.com'
 )
 
-
 EMAIL_PORT = int(
-    os.environ.get(
+    os.getenv(
         'EMAIL_PORT',
         '587'
     )
 )
 
-
 EMAIL_USE_TLS = (
-    os.environ.get(
+    os.getenv(
         'EMAIL_USE_TLS',
         'True'
     ).lower() == 'true'
 )
 
-
-EMAIL_HOST_USER = os.environ.get(
+EMAIL_HOST_USER = os.getenv(
     'EMAIL_HOST_USER'
 )
 
-
-EMAIL_HOST_PASSWORD = os.environ.get(
+EMAIL_HOST_PASSWORD = os.getenv(
     'EMAIL_HOST_PASSWORD'
 )
 
-
-DEFAULT_FROM_EMAIL = os.environ.get(
+DEFAULT_FROM_EMAIL = os.getenv(
     'DEFAULT_FROM_EMAIL',
     EMAIL_HOST_USER
 )
 
-
-# =========================================================
 # IMPORTANT:
-# PREVENT SMTP FROM HANGING FOREVER
-# =========================================================
-
+# Prevent SMTP connection from hanging too long.
 EMAIL_TIMEOUT = int(
-    os.environ.get(
+    os.getenv(
         'EMAIL_TIMEOUT',
         '10'
     )
@@ -282,7 +277,7 @@ EMAIL_TIMEOUT = int(
 
 
 # =========================================================
-# CLOUDINARY STORAGE
+# STORAGE
 # =========================================================
 
 STORAGES = {
