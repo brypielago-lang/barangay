@@ -86,24 +86,100 @@ def update_request(request, pk):
     return redirect('request_detail', pk=pk)
 
 def certificate_pdf(request, pk):
-    obj = get_object_or_404(CertificateRequest.objects.select_related('resident'), pk=pk)
-    if not request.user.is_staff and obj.resident.user_id != request.user.id: raise Http404
-    if obj.status not in ('approved', 'released'): messages.error(request, 'This document is not yet approved.'); return redirect('request_detail', pk=pk)
-    template = CertificateTemplate.objects.filter(certificate_type=obj.certificate_type).first()
+    obj = get_object_or_404(
+        CertificateRequest.objects.select_related('resident'),
+        pk=pk
+    )
+
+    if not request.user.is_staff and obj.resident.user_id != request.user.id:
+        raise Http404
+
+    if obj.status not in ('approved', 'released'):
+        messages.error(
+            request,
+            'This document is not yet approved.'
+        )
+        return redirect('request_detail', pk=pk)
+
+    template = CertificateTemplate.objects.filter(
+        certificate_type=obj.certificate_type
+    ).first()
+
     barangay = BarangayProfile.objects.first() or BarangayProfile()
-    title = template.title if template else obj.get_certificate_type_display()
-    body = Template(template.body if template else 'This certifies that {{ resident.full_name }} is a bona fide resident of {{ barangay.name }}. Purpose: {{ request.purpose }}.').render(Context({'resident': obj.resident, 'request': obj, 'barangay': barangay}))
-    context = {'item': obj, 'barangay': barangay, 'title': title, 'body': body, 'footer': template.footer if template else ''}
+
+    title = (
+        template.title
+        if template
+        else obj.get_certificate_type_display()
+    )
+
+    default_body = """
+    This is to certify that <strong>{{ resident.full_name }}</strong>,
+    a bona fide resident of <strong>{{ barangay.name }}</strong>,
+    {{ barangay.municipality }}, {{ barangay.province }},
+    is known to this office and has no derogatory record on file.
+
+    This certification is issued upon the request of the
+    above-named person for <strong>{{ request.purpose }}</strong>.
+
+    Issued for whatever legal purpose this may serve.
+    """
+
+    body_template = template.body if template else default_body
+
+    body = Template(body_template).render(
+        Context({
+            'resident': obj.resident,
+            'request': obj,
+            'barangay': barangay,
+        })
+    )
+
+    context = {
+        'item': obj,
+        'barangay': barangay,
+        'title': title,
+        'body': body,
+        'footer': template.footer if template else '',
+    }
+
     if request.GET.get('download') == 'pdf':
         try:
             from weasyprint import HTML
-            pdf = HTML(string=render_to_string('core/certificate_print.html', context, request=request), base_url=request.build_absolute_uri('/')).write_pdf()
-            response = HttpResponse(pdf, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{obj.reference_no}.pdf"'
+
+            html = render_to_string(
+                'core/certificate_print.html',
+                context,
+                request=request
+            )
+
+            pdf = HTML(
+                string=html,
+                base_url=request.build_absolute_uri('/')
+            ).write_pdf()
+
+            response = HttpResponse(
+                pdf,
+                content_type='application/pdf'
+            )
+
+            response['Content-Disposition'] = (
+                f'attachment; filename="{obj.reference_no}.pdf"'
+            )
+
             return response
+
         except (ImportError, OSError):
-            messages.warning(request, 'PDF support is unavailable; use browser print to save as PDF.')
-    return render(request, 'core/certificate_print.html', context)
+            messages.warning(
+                request,
+                'PDF support is unavailable; use browser print to save as PDF.'
+            )
+
+    return render(
+        request,
+        'core/certificate_print.html',
+        context
+    )
 
 def verify(request, token):
     obj = get_object_or_404(CertificateRequest, verification_token=token)
