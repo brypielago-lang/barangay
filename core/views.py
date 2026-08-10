@@ -53,40 +53,25 @@ def log(user, action, detail=''):
 
 def notify_request(request_obj, title, message):
 
-    resident = request_obj.resident
-    user = resident.user
+    user = request_obj.resident.user
 
     if not user:
-        print("NOTIFICATION ERROR: Resident has no user account.")
         return
 
-    # -----------------------------------------------------
-    # IN-APP NOTIFICATION
-    # -----------------------------------------------------
+    # ==========================================
+    # 1. CREATE WEBSITE NOTIFICATION
+    # ==========================================
 
-    try:
+    Notification.objects.create(
+        user=user,
+        title=title,
+        message=message,
+        url=f'/requests/{request_obj.pk}/'
+    )
 
-        Notification.objects.create(
-            user=user,
-            title=title,
-            message=message,
-            url=f'/requests/{request_obj.pk}/'
-        )
-
-        print(
-            f"NOTIFICATION SENT TO USER: {user.username}"
-        )
-
-    except Exception as e:
-
-        print(
-            "NOTIFICATION ERROR:",
-            repr(e)
-        )
-
-    # -----------------------------------------------------
-    # EMAIL
-    # -----------------------------------------------------
+    # ==========================================
+    # 2. SEND EMAIL
+    # ==========================================
 
     if user.email:
 
@@ -96,10 +81,8 @@ def notify_request(request_obj, title, message):
                 subject=title,
                 message=message,
                 from_email=None,
-                recipient_list=[
-                    user.email
-                ],
-                fail_silently=False
+                recipient_list=[user.email],
+                fail_silently=False,
             )
 
             print(
@@ -109,8 +92,7 @@ def notify_request(request_obj, title, message):
         except Exception as e:
 
             print(
-                "EMAIL ERROR:",
-                repr(e)
+                f"EMAIL ERROR: {repr(e)}"
             )
 
     else:
