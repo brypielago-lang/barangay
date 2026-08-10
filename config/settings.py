@@ -230,9 +230,7 @@ LOGIN_URL = 'login'
 # EMAIL
 # =========================================================
 
-EMAIL_BACKEND = (
-    'django.core.mail.backends.smtp.EmailBackend'
-)
+EMAIL_BACKEND = 'core.email_backend.ResendEmailBackend'
 
 EMAIL_HOST = os.getenv(
     'EMAIL_HOST',
