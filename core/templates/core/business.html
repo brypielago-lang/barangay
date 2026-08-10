@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Barangay Business Clearance</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: #111;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 14mm 18mm 12mm 18mm;
+            margin: auto;
+        }
+
+        /* HEADER */
+
+        .header {
+            position: relative;
+            text-align: center;
+            min-height: 42mm;
+        }
+
+        .barangay-logo {
+            position: absolute;
+            left: 7mm;
+            top: 0;
+            width: 27mm;
+            height: 27mm;
+            object-fit: contain;
+        }
+
+        .municipality-logo {
+            position: absolute;
+            right: 7mm;
+            top: 0;
+            width: 27mm;
+            height: 27mm;
+            object-fit: contain;
+        }
+
+        .header-text {
+            line-height: 1.25;
+            padding-top: 1mm;
+        }
+
+        .republic {
+            font-size: 13px;
+        }
+
+        .province {
+            font-size: 13px;
+        }
+
+        .municipality {
+            font-size: 13px;
+        }
+
+        .barangay-name {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .office {
+            margin-top: 9mm;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* TITLE */
+
+        .title {
+            text-align: center;
+            font-size: 17px;
+            font-weight: bold;
+            margin-top: 1mm;
+            margin-bottom: 8mm;
+            text-transform: uppercase;
+        }
+
+        /* BODY */
+
+        .to-whom {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 7mm;
+        }
+
+        .intro {
+            text-align: center;
+            font-size: 12.5px;
+            font-weight: bold;
+            margin-bottom: 5mm;
+        }
+
+        /* BUSINESS DETAILS */
+
+        .business-details {
+            width: 75%;
+            margin: 0 auto 9mm auto;
+        }
+
+        .detail {
+            text-align: center;
+            margin-bottom: 5mm;
+        }
+
+        .detail-line {
+            border-bottom: 1px solid #222;
+            min-height: 7mm;
+            padding: 0 4mm;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            margin-top: 1mm;
+        }
+
+        /* PARAGRAPHS */
+
+        .paragraph {
+            text-align: justify;
+            line-height: 1.45;
+            margin: 6mm 0;
+            font-size: 12px;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: flex-start;
+            margin: 5mm 0;
+            line-height: 1.4;
+        }
+
+        .check {
+            width: 24mm;
+            font-weight: bold;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .check-text {
+            flex: 1;
+        }
+
+        .center-text {
+            text-align: center;
+            margin: 7mm 0;
+            font-weight: bold;
+        }
+
+        /* SIGNATURE */
+
+        .signature-area {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 7mm;
+        }
+
+        .signature {
+            width: 48mm;
+            text-align: center;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            text-decoration: underline;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .position {
+            font-size: 11px;
+            margin-top: 1mm;
+        }
+
+        /* NOTE */
+
+        .note {
+            margin-top: 4mm;
+            font-style: italic;
+            font-size: 11px;
+        }
+
+        /* PAYMENT */
+
+        .payment-title {
+            margin-top: 5mm;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .payment {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3mm;
+        }
+
+        .payment-column {
+            width: 45%;
+        }
+
+        .payment-row {
+            display: flex;
+            margin: 2mm 0;
+            font-size: 11px;
+        }
+
+        .payment-label {
+            width: 27mm;
+            font-weight: bold;
+        }
+
+        .payment-line {
+            flex: 1;
+            border-bottom: 1px solid #222;
+            min-height: 5mm;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .page {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        {% if barangay.logo %}
+        <img
+            src="{{ barangay.logo.url }}"
+            class="barangay-logo"
+            alt="Barangay Logo"
+        >
+        {% endif %}
+
+        {% if barangay.municipality_logo %}
+        <img
+            src="{{ barangay.municipality_logo.url }}"
+            class="municipality-logo"
+            alt="Municipality Logo"
+        >
+        {% endif %}
+
+        <div class="header-text">
+
+            <div class="republic">
+                Republic of the Philippines
+            </div>
+
+            <div class="province">
+                Province of {{ barangay.province }}
+            </div>
+
+            <div class="municipality">
+                Municipality of {{ barangay.municipality }}
+            </div>
+
+            <div class="barangay-name">
+                Barangay {{ barangay.name }}
+            </div>
+
+            <div class="office">
+                OFFICE OF THE PUNONG BARANGAY
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TITLE -->
+
+    <div class="title">
+        BARANGAY BUSINESS CLEARANCE
+    </div>
+
+
+    <!-- BODY -->
+
+    <div class="to-whom">
+        To whom it may concern:
+    </div>
+
+
+    <div class="intro">
+        This is to certify that the business or trade activity described below:
+    </div>
+
+
+    <!-- BUSINESS INFORMATION -->
+
+    <div class="business-details">
+
+        <div class="detail">
+            <div class="detail-line">
+                {{ item.business_name }}
+            </div>
+            <div class="detail-label">
+                (Business Name or Trade Activity)
+            </div>
+        </div>
+
+
+        <div class="detail">
+            <div class="detail-line">
+                {{ item.business_address }}
+            </div>
+            <div class="detail-label">
+                (Location)
+            </div>
+        </div>
+
+
+        <div class="detail">
+            <div class="detail-line">
+                {{ resident.full_name }}
+            </div>
+            <div class="detail-label">
+                (Operator/Manager)
+            </div>
+        </div>
+
+
+        <div class="detail">
+            <div class="detail-line">
+                {{ resident.address }}
+            </div>
+            <div class="detail-label">
+                (Address)
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="paragraph">
+        Proposed to be established in this Barangay and is being applied for a
+        Barangay Clearance to be used in securing a corresponding Mayor's Permit
+        has been found to be:
+    </div>
+
+
+    <!-- CONDITIONS -->
+
+    <div class="check-row">
+        <div class="check">
+            ______ /
+        </div>
+
+        <div class="check-text">
+            In conformity with the provisions of existing Barangay Ordinances,
+            rules, and regulations being enforced in this Barangay;
+        </div>
+    </div>
+
+
+    <div class="check-row">
+        <div class="check">
+            ______ /
+        </div>
+
+        <div class="check-text">
+            Not among those businesses or trade activities with pending cases
+            and/or being banned to be established in this Barangay;
+        </div>
+    </div>
+
+
+    <div class="center-text">
+        In view of the foregoing, this barangay thru the undersigned.
+    </div>
+
+
+    <div class="check-row">
+        <div class="check">
+            ______ /
+        </div>
+
+        <div class="check-text">
+            Interposes no objection for the issuance of the corresponding
+            Mayor's Permit being applied for.
+        </div>
+    </div>
+
+
+    <div class="paragraph">
+        PERMIT, HOWEVER, is subject to cancellation if the specific purpose
+        granted by the Barangay Council is not consonant with the actual
+        operation of the business.
+    </div>
+
+
+    <div class="paragraph">
+        Issued this
+        <strong>{{ item.requested_at|date:"jS" }}</strong>
+        day of
+        <strong>{{ item.requested_at|date:"F, Y" }}</strong>
+        at {{ barangay.name }},
+        {{ barangay.municipality }},
+        {{ barangay.province }}.
+    </div>
+
+
+    <!-- SIGNATURE -->
+
+    <div class="signature-area">
+
+        <div class="signature">
+
+            <div class="signature-name">
+                {{ barangay.captain_name }}
+            </div>
+
+            <div class="position">
+                Punong Barangay
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- NOTE -->
+
+    <div class="note">
+        (Note: Not Valid without Barangay Dry Seal)
+    </div>
+
+
+    <!-- PAYMENT -->
+
+    <div class="payment-title">
+        Paid Under:
+    </div>
+
+
+    <div class="payment">
+
+        <div class="payment-column">
+
+            <div class="payment-row">
+                <div class="payment-label">
+                    O.R. NO.:
+                </div>
+                <div class="payment-line"></div>
+            </div>
+
+            <div class="payment-row">
+                <div class="payment-label">
+                    DATE PAID:
+                </div>
+                <div class="payment-line"></div>
+            </div>
+
+            <div class="payment-row">
+                <div class="payment-label">
+                    PLACE:
+                </div>
+                <div class="payment-line"></div>
+            </div>
+
+        </div>
+
+
+        <div class="payment-column">
+
+            <div class="payment-row">
+                <div class="payment-label">
+                    TIN NO.:
+                </div>
+                <div class="payment-line"></div>
+            </div>
+
+            <div class="payment-row">
+                <div class="payment-label">
+                    DATE ISSUED:
+                </div>
+                <div class="payment-line"></div>
+            </div>
+
+            <div class="payment-row">
+                <div class="payment-label">
+                    PLACE ISSUED:
+                </div>
+                <div class="payment-line"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
