@@ -7,13 +7,29 @@ class BarangayProfile(models.Model):
     name = models.CharField(max_length=150, default='Barangay Mabuhay')
     municipality = models.CharField(max_length=150, blank=True)
     province = models.CharField(max_length=150, blank=True)
-    logo = models.ImageField(upload_to='branding/', blank=True, null=True)
+
+    # Barangay logo
+    logo = models.ImageField(
+        upload_to='branding/',
+        blank=True,
+        null=True
+    )
+
+    # Municipality logo
+    municipality_logo = models.ImageField(
+        upload_to='branding/municipality/',
+        blank=True,
+        null=True
+    )
+
     captain_name = models.CharField(max_length=150, blank=True)
     secretary_name = models.CharField(max_length=150, blank=True)
     address = models.TextField(blank=True)
     contact_number = models.CharField(max_length=30, blank=True)
     email = models.EmailField(blank=True)
-    def __str__(self): return self.name
+
+    def __str__(self):
+        return self.name
 
 class Resident(models.Model):
     SEX = [('M', 'Male'), ('F', 'Female'), ('O', 'Other')]
