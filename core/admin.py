@@ -171,6 +171,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             'approved',
             'rejected',
         ):
+
             if not obj.reviewed_at:
                 obj.reviewed_at = timezone.now()
 
@@ -179,6 +180,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         # =====================================================
 
         if obj.status == 'released':
+
             if not obj.released_at:
                 obj.released_at = timezone.now()
 
@@ -207,20 +209,30 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         resident = obj.resident
 
         if not resident:
-            print("NOTIFICATION ERROR: No resident.")
+
+            print(
+                "NOTIFICATION ERROR: No resident."
+            )
+
             return
 
         # =====================================================
         # GET USER
         # =====================================================
 
-        user = getattr(resident, 'user', None)
+        user = getattr(
+            resident,
+            'user',
+            None
+        )
 
         if not user:
+
             print(
                 "NOTIFICATION ERROR: "
                 "Resident has no linked user."
             )
+
             return
 
         # =====================================================
@@ -234,7 +246,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         # =====================================================
-        # TITLE
+        # NOTIFICATION TITLE
         # =====================================================
 
         title = (
@@ -242,7 +254,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         # =====================================================
-        # MESSAGE
+        # NOTIFICATION MESSAGE
         # =====================================================
 
         message = (
@@ -252,6 +264,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         if obj.remarks:
+
             message += (
                 f'\n\nRemarks: {obj.remarks}'
             )
@@ -285,13 +298,19 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         # EMAIL
         # =====================================================
 
-        email = getattr(user, 'email', None)
+        email = getattr(
+            user,
+            'email',
+            None
+        )
 
         if not email:
+
             print(
                 'EMAIL NOT SENT: '
                 f'{user.username} has no email.'
             )
+
             return
 
         try:
@@ -301,30 +320,25 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 f'{email}'
             )
 
-            send_mail(
+            email_result = send_mail(
                 subject=title,
                 message=message,
-                from_email=getattr(
-                    settings,
-                    'DEFAULT_FROM_EMAIL',
-                    settings.EMAIL_HOST_USER
-                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=True,
+                fail_silently=False,
             )
 
             print(
-                'EMAIL PROCESS FINISHED FOR: '
-                f'{email}'
+                'EMAIL SEND RESULT: '
+                f'{email_result} '
+                f'TO: {email}'
             )
 
         except Exception as e:
 
-            # Email failure must NOT break admin.
-
             print(
                 'EMAIL ERROR: '
-                f'{repr(e)}'
+                f'{type(e).__name__}: {e}'
             )
 
 
