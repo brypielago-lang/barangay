@@ -1,189 +1,217 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <title>{{ title }}</title>
 
     <style>
+        @page {
+            size: A4;
+            margin: 18mm 20mm;
+        }
+
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            background: #eef1f5;
-            font-family: Georgia, "Times New Roman", serif;
-            color: #182333;
+            background: #eee;
+            color: #111;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13px;
         }
 
         .toolbar {
             text-align: center;
-            padding: 20px;
+            padding: 15px;
         }
 
         .toolbar button {
             background: #173f7a;
             color: white;
             border: 0;
-            padding: 11px 24px;
-            border-radius: 6px;
-            cursor: pointer;
+            padding: 11px 25px;
+            border-radius: 5px;
             font-size: 14px;
+            cursor: pointer;
         }
 
-        .certificate {
+        .paper {
             width: 210mm;
             min-height: 297mm;
             margin: 20px auto;
-            padding: 16mm;
             background: white;
-            position: relative;
-            box-shadow: 0 8px 30px rgba(0,0,0,.12);
+            padding: 18mm 18mm 15mm;
         }
 
-        .outer-border {
-            min-height: 265mm;
-            border: 3px solid #173f7a;
-            padding: 5px;
-        }
-
-        .inner-border {
-            min-height: 255mm;
-            border: 1px solid #c5a45d;
-            padding: 25px 38px;
-        }
+        /* HEADER */
 
         .header {
             text-align: center;
             position: relative;
-            padding-bottom: 18px;
-            border-bottom: 1px solid #d6dbe2;
         }
 
-        .logo {
-            width: 82px;
-            height: 82px;
-            object-fit: contain;
+        .logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            height: 75px;
             margin-bottom: 8px;
         }
 
+        .logos img {
+            width: 68px;
+            height: 68px;
+            object-fit: contain;
+        }
+
+        .main-logo {
+            width: 78px !important;
+            height: 78px !important;
+        }
+
         .republic {
-            font-size: 14px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            font-size: 15px;
+            margin-top: 4px;
         }
 
         .province {
             font-size: 14px;
-            margin-top: 4px;
         }
 
-        .barangay-name {
-            color: #173f7a;
-            font-size: 22px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-top: 6px;
-            letter-spacing: 1px;
+        .municipality {
+            font-size: 14px;
         }
 
-        .address {
-            font-size: 12px;
-            color: #667085;
-            margin-top: 5px;
-        }
-
-        .qr {
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 78px;
-            height: 78px;
-        }
-
-        .document-title {
-            text-align: center;
-            margin: 32px 0 25px;
-        }
-
-        .document-title h1 {
-            margin: 0;
-            color: #173f7a;
-            font-size: 27px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .document-title .line {
-            width: 90px;
-            height: 3px;
-            background: #c5a45d;
-            margin: 12px auto 0;
-        }
-
-        .body {
+        .barangay {
             font-size: 16px;
-            line-height: 2;
-            text-align: justify;
-            min-height: 115mm;
-        }
-
-        .body p {
-            margin: 0 0 16px;
-        }
-
-        .reference {
-            margin-top: 20px;
-            font-size: 13px;
-            color: #475467;
-        }
-
-        .date-issued {
-            margin-top: 14px;
-            font-size: 15px;
-            line-height: 1.8;
-        }
-
-        .signature-area {
-            margin-top: 55px;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .signature {
-            width: 250px;
-            text-align: center;
-        }
-
-        .signature-line {
-            border-bottom: 1px solid #182333;
-            margin-bottom: 8px;
-        }
-
-        .captain {
             font-weight: bold;
-            text-transform: uppercase;
-            font-size: 15px;
-        }
-
-        .position {
-            font-size: 12px;
-            color: #667085;
             margin-top: 3px;
         }
 
-        .footer {
-            margin-top: 30px;
-            padding-top: 12px;
-            border-top: 1px solid #d6dbe2;
-            text-align: center;
-            font-size: 11px;
-            color: #667085;
+        .office {
+            font-size: 17px;
+            font-weight: bold;
+            margin-top: 20px;
         }
 
-        @page {
-            size: A4;
+        /* TITLE */
+
+        .title {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .title h1 {
+            display: inline-block;
+            font-size: 21px;
             margin: 0;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        /* DATE */
+
+        .date {
+            text-align: right;
+            margin-top: 25px;
+            font-size: 13px;
+        }
+
+        /* BODY */
+
+        .body {
+            margin-top: 25px;
+            line-height: 1.65;
+            font-size: 14px;
+        }
+
+        .to-whom {
+            font-weight: bold;
+            margin-bottom: 18px;
+        }
+
+        .body p {
+            margin: 0 0 18px;
+            text-align: justify;
+        }
+
+        .center-text {
+            text-align: center !important;
+        }
+
+        /* SIGNATURES */
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 55px;
+        }
+
+        .applicant {
+            width: 45%;
+        }
+
+        .captain {
+            width: 40%;
+            text-align: center;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1px solid #111;
+            display: inline-block;
+            min-width: 190px;
+            padding-bottom: 3px;
+        }
+
+        .position {
+            margin-top: 4px;
+        }
+
+        /* DETAILS */
+
+        .details {
+            margin-top: 35px;
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .details-row {
+            display: flex;
+        }
+
+        .details-label {
+            width: 85px;
+        }
+
+        .details-value {
+            text-decoration: underline;
+        }
+
+        /* QR */
+
+        .verification {
+            position: absolute;
+            right: 0;
+            top: 0;
+            text-align: center;
+            font-size: 8px;
+        }
+
+        .verification img {
+            width: 65px;
+            height: 65px;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            margin-top: 25px;
+            font-size: 11px;
         }
 
         @media print {
@@ -195,9 +223,11 @@
                 display: none;
             }
 
-            .certificate {
+            .paper {
                 margin: 0;
-                box-shadow: none;
+                padding: 0;
+                width: 100%;
+                min-height: auto;
             }
         }
     </style>
@@ -206,100 +236,172 @@
 <body>
 
 <div class="toolbar">
-    <button onclick="window.print()">Print / Save as PDF</button>
+    <button onclick="window.print()">
+        Print / Save as PDF
+    </button>
 </div>
 
-<div class="certificate">
-    <div class="outer-border">
-        <div class="inner-border">
 
-            <header class="header">
+<div class="paper">
 
-                {% if barangay.logo %}
-                    <img class="logo" src="{{ barangay.logo.url }}" alt="Barangay Logo">
-                {% endif %}
+    <!-- HEADER -->
+    <div class="header">
 
+        <div class="logos">
+
+            {% if barangay.logo %}
                 <img
-                    class="qr"
-                    src="{% url 'qr_code' item.verification_token %}"
-                    alt="Verification QR Code"
+                    class="main-logo"
+                    src="{{ barangay.logo.url }}"
+                    alt="Barangay Logo"
                 >
-
-                <div class="republic">
-                    Republic of the Philippines
-                </div>
-
-                {% if barangay.province %}
-                    <div class="province">
-                        Province of {{ barangay.province }}
-                    </div>
-                {% endif %}
-
-                {% if barangay.municipality %}
-                    <div class="province">
-                        Municipality of {{ barangay.municipality }}
-                    </div>
-                {% endif %}
-
-                <div class="barangay-name">
-                    {{ barangay.name }}
-                </div>
-
-                {% if barangay.address %}
-                    <div class="address">
-                        {{ barangay.address }}
-                    </div>
-                {% endif %}
-
-            </header>
-
-            <section class="document-title">
-                <h1>{{ title }}</h1>
-                <div class="line"></div>
-            </section>
-
-            <section class="body">
-                {{ body|linebreaks }}
-            </section>
-
-            <div class="reference">
-                <strong>Reference No.:</strong>
-                {{ item.reference_no }}
-            </div>
-
-            {% if item.reviewed_at %}
-                <div class="date-issued">
-                    Issued this
-                    <strong>{{ item.reviewed_at|date:"jS" }}</strong>
-                    day of
-                    <strong>{{ item.reviewed_at|date:"F Y" }}</strong>.
-                </div>
-            {% endif %}
-
-            <div class="signature-area">
-                <div class="signature">
-
-                    <div class="signature-line"></div>
-
-                    <div class="captain">
-                        {{ barangay.captain_name|default:"Barangay Captain" }}
-                    </div>
-
-                    <div class="position">
-                        Punong Barangay
-                    </div>
-
-                </div>
-            </div>
-
-            {% if footer %}
-                <footer class="footer">
-                    {{ footer|linebreaks }}
-                </footer>
             {% endif %}
 
         </div>
+
+        <div class="republic">
+            Republic of the Philippines
+        </div>
+
+        {% if barangay.province %}
+            <div class="province">
+                Province of {{ barangay.province }}
+            </div>
+        {% endif %}
+
+        {% if barangay.municipality %}
+            <div class="municipality">
+                Municipality of {{ barangay.municipality }}
+            </div>
+        {% endif %}
+
+        <div class="barangay">
+            {{ barangay.name }}
+        </div>
+
+        <div class="office">
+            OFFICE OF THE PUNONG BARANGAY
+        </div>
+
+        <!-- QR VERIFICATION -->
+        <div class="verification">
+            <img
+                src="{% url 'qr_code' item.verification_token %}"
+                alt="Verification QR"
+            >
+            <div>Verify</div>
+        </div>
+
     </div>
+
+
+    <!-- TITLE -->
+    <div class="title">
+        <h1>{{ title }}</h1>
+    </div>
+
+
+    <!-- DATE -->
+    <div class="date">
+        {% if item.reviewed_at %}
+            {{ item.reviewed_at|date:"F d, Y" }}
+        {% else %}
+            {{ item.requested_at|date:"F d, Y" }}
+        {% endif %}
+    </div>
+
+
+    <!-- BODY -->
+    <div class="body">
+
+        <div class="to-whom">
+            TO WHOM IT MAY CONCERN:
+        </div>
+
+        {{ body|linebreaks }}
+
+    </div>
+
+
+    <!-- SIGNATURES -->
+    <div class="signatures">
+
+        <div class="applicant">
+
+            <div class="signature-name">
+                {{ item.resident.full_name }}
+            </div>
+
+            <div>
+                Name and Signature of Applicant
+            </div>
+
+        </div>
+
+
+        <div class="captain">
+
+            <div class="signature-name">
+                {{ barangay.captain_name|default:"Barangay Captain" }}
+            </div>
+
+            <div class="position">
+                Punong Barangay
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- DETAILS -->
+    <div class="details">
+
+        <div class="details-row">
+            <div class="details-label">
+                Cert. Fee:
+            </div>
+
+            <div class="details-value">
+                ₱{{ item.fee|floatformat:2 }}
+            </div>
+        </div>
+
+
+        <div class="details-row">
+            <div class="details-label">
+                Reference No.:
+            </div>
+
+            <div class="details-value">
+                {{ item.reference_no }}
+            </div>
+        </div>
+
+
+        <div class="details-row">
+            <div class="details-label">
+                Date:
+            </div>
+
+            <div class="details-value">
+                {% if item.reviewed_at %}
+                    {{ item.reviewed_at|date:"F d, Y" }}
+                {% else %}
+                    {{ item.requested_at|date:"F d, Y" }}
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+
+    {% if footer %}
+        <div class="footer">
+            {{ footer|linebreaks }}
+        </div>
+    {% endif %}
+
 </div>
 
 </body>
