@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: "Times New Roman", serif;
+            color: #000;
+        }
+
+        .certificate {
+            width: 210mm;
+            min-height: 297mm;
+            box-sizing: border-box;
+            padding: 25mm 25mm 20mm 25mm;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            position: relative;
+            min-height: 85px;
+        }
+
+        .barangay-logo {
+            position: absolute;
+            left: 15px;
+            top: 0;
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+        }
+
+        .municipality-logo {
+            position: absolute;
+            right: 15px;
+            top: 0;
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+        }
+
+        .header-text {
+            font-size: 15px;
+            line-height: 1.2;
+        }
+
+        .header-text strong {
+            font-size: 16px;
+        }
+
+        .office {
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 25px;
+        }
+
+        .title {
+            text-align: center;
+            font-size: 22px;
+            margin-top: 25px;
+            margin-bottom: 65px;
+        }
+
+        .date {
+            text-align: right;
+            margin-right: 20px;
+            margin-bottom: 55px;
+        }
+
+        .date-line {
+            display: inline-block;
+            width: 150px;
+            border-bottom: 1px solid #000;
+            text-align: center;
+        }
+
+        .date-label {
+            display: block;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .body {
+            font-size: 16px;
+            line-height: 1.7;
+            text-align: justify;
+        }
+
+        .body p {
+            margin-bottom: 25px;
+        }
+
+        .name {
+            font-weight: bold;
+        }
+
+        .signature {
+            margin-top: 95px;
+            margin-left: 58%;
+            text-align: center;
+            width: 220px;
+        }
+
+        .signature-name {
+            font-weight: bold;
+            text-decoration: underline;
+            font-size: 16px;
+        }
+
+        .signature-title {
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="certificate">
+
+    <!-- HEADER -->
+    <div class="header">
+
+        {% if barangay.logo %}
+            <img
+                src="{{ barangay.logo.url }}"
+                class="barangay-logo"
+                alt="Barangay Logo"
+            >
+        {% endif %}
+
+        {% if barangay.municipality_logo %}
+            <img
+                src="{{ barangay.municipality_logo.url }}"
+                class="municipality-logo"
+                alt="Municipality Logo"
+            >
+        {% endif %}
+
+        <div class="header-text">
+            Republic of the Philippines<br>
+
+            {% if barangay.province %}
+                Province of {{ barangay.province }}<br>
+            {% endif %}
+
+            {% if barangay.municipality %}
+                MUNICIPALITY OF {{ barangay.municipality|upper }}<br>
+            {% endif %}
+
+            <strong>{{ barangay.name|upper }}</strong>
+        </div>
+
+    </div>
+
+
+    <!-- OFFICE -->
+    <div class="office">
+        OFFICE OF THE PUNONG BARANGAY
+    </div>
+
+
+    <!-- TITLE -->
+    <div class="title">
+        CERTIFICATION OF INDIGENCY
+    </div>
+
+
+    <!-- DATE -->
+    <div class="date">
+        <span class="date-line">
+            {{ request.released_at|date:"F d, Y" }}
+        </span>
+        <span class="date-label">
+            Date
+        </span>
+    </div>
+
+
+    <!-- BODY -->
+    <div class="body">
+
+        <p>
+            This is to certify that
+            <span class="name">
+                {{ request.resident.full_name }}
+            </span>
+            of legal age, Filipino and resident of
+            Purok {{ request.resident.purok|default:"____" }}
+            is in the list of indigent families of
+            {{ barangay.name }},
+            {{ barangay.municipality }},
+            {{ barangay.province }}.
+        </p>
+
+        <p>
+            This certification is issued for
+            {% if request.purpose %}
+                {{ request.purpose }}
+            {% else %}
+                whatever legal purposes it may serve
+            {% endif %}.
+        </p>
+
+    </div>
+
+
+    <!-- SIGNATURE -->
+    <div class="signature">
+
+        <div class="signature-name">
+            {{ barangay.captain_name }}
+        </div>
+
+        <div class="signature-title">
+            Punong Barangay
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
