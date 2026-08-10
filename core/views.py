@@ -51,9 +51,7 @@ def log(user, action, detail=''):
 # =========================================================
 
 def notify_request(request_obj, title, message):
-
     if request_obj.resident.user:
-
         Notification.objects.create(
             user=request_obj.resident.user,
             title=title,
@@ -136,7 +134,9 @@ def dashboard(request):
 
             'recent':
                 CertificateRequest.objects
-                .select_related('resident')[:8],
+                .select_related(
+                    'resident'
+                )[:8],
         }
 
         return render(
@@ -312,11 +312,11 @@ def request_detail(request, pk):
         pk=pk
     )
 
+    # SECURITY
     if (
         not request.user.is_staff
         and obj.resident.user_id != request.user.id
     ):
-
         raise Http404
 
     return render(
@@ -344,7 +344,9 @@ def staff_requests(request):
 
         items = (
             CertificateRequest.objects
-            .select_related('resident')
+            .select_related(
+                'resident'
+            )
             .filter(
                 status=status
             )
@@ -354,7 +356,9 @@ def staff_requests(request):
 
         items = (
             CertificateRequest.objects
-            .select_related('resident')
+            .select_related(
+                'resident'
+            )
         )
 
     return render(
@@ -441,11 +445,15 @@ def update_request(request, pk):
 
 
 # =========================================================
-# CERTIFICATE / DOCUMENT
+# CERTIFICATE DOCUMENT
 # =========================================================
 
 @login_required
 def certificate_pdf(request, pk):
+
+    # -----------------------------------------------------
+    # GET REQUEST
+    # -----------------------------------------------------
 
     obj = get_object_or_404(
         CertificateRequest.objects.select_related(
@@ -462,7 +470,6 @@ def certificate_pdf(request, pk):
         not request.user.is_staff
         and obj.resident.user_id != request.user.id
     ):
-
         raise Http404
 
     # -----------------------------------------------------
@@ -508,7 +515,7 @@ def certificate_pdf(request, pk):
 
     template_name = certificate_templates.get(
         obj.certificate_type,
-        'core/certificate_print.html'
+        'core/residency.html'
     )
 
     # -----------------------------------------------------
@@ -518,11 +525,10 @@ def certificate_pdf(request, pk):
     barangay = BarangayProfile.objects.first()
 
     if barangay is None:
-
         barangay = BarangayProfile()
 
     # -----------------------------------------------------
-    # ADMIN EDITABLE TEMPLATE
+    # ADMIN CERTIFICATE TEMPLATE
     # -----------------------------------------------------
 
     certificate_template = (
@@ -535,10 +541,7 @@ def certificate_pdf(request, pk):
 
     if certificate_template:
 
-        title = (
-            certificate_template.title
-            or obj.get_certificate_type_display()
-        )
+        title = certificate_template.title
 
         footer = (
             certificate_template.footer
@@ -567,17 +570,18 @@ def certificate_pdf(request, pk):
         body = Template(
             certificate_template.body
         ).render(
-            Context({
+            Context(
+                {
+                    'resident':
+                        obj.resident,
 
-                'resident':
-                    obj.resident,
+                    'request':
+                        obj,
 
-                'request':
-                    obj,
-
-                'barangay':
-                    barangay,
-            })
+                    'barangay':
+                        barangay,
+                }
+            )
         )
 
     # -----------------------------------------------------
@@ -606,39 +610,42 @@ def certificate_pdf(request, pk):
 
         'footer':
             footer,
-
-        # Used by certificate HTML
-        'auto_print':
-            request.GET.get('print') == '1',
     }
 
     # =====================================================
     # DOWNLOAD PDF
     # =====================================================
 
-    if request.GET.get('download') == 'pdf':
+    if request.GET.get(
+        'download'
+    ) == 'pdf':
 
         try:
 
             from weasyprint import HTML
 
+            # Render HTML
             html = render_to_string(
                 template_name,
                 context,
                 request=request
             )
 
+            # Convert HTML -> PDF
             pdf = HTML(
                 string=html,
                 base_url=request.build_absolute_uri('/')
             ).write_pdf()
 
+            # PDF response
             response = HttpResponse(
                 pdf,
                 content_type='application/pdf'
             )
 
-            response['Content-Disposition'] = (
+            response[
+                'Content-Disposition'
+            ] = (
                 'attachment; '
                 f'filename="{obj.reference_no}.pdf"'
             )
@@ -648,7 +655,7 @@ def certificate_pdf(request, pk):
         except ImportError:
 
             print(
-                'PDF ERROR: No module named weasyprint'
+                'PDF ERROR: WeasyPrint is not installed.'
             )
 
             messages.error(
@@ -682,30 +689,11 @@ def certificate_pdf(request, pk):
     # PRINT DOCUMENT
     # =====================================================
 
-    try:
-
-        return render(
-            request,
-            template_name,
-            context
-        )
-
-    except Exception as e:
-
-        print(
-            'CERTIFICATE TEMPLATE ERROR:',
-            repr(e)
-        )
-
-        messages.error(
-            request,
-            'There was an error opening the certificate.'
-        )
-
-        return redirect(
-            'request_detail',
-            pk=obj.pk
-        )
+    return render(
+        request,
+        template_name,
+        context
+    )
 
 
 # =========================================================
@@ -774,15 +762,20 @@ def reports(request):
 
     recent_logs = (
         ActivityLog.objects
-        .select_related('user')[:15]
+        .select_related(
+            'user'
+        )[:15]
     )
 
     return render(
         request,
         'core/reports.html',
         {
-            'by_type': by_type,
-            'recent_logs': recent_logs
+            'by_type':
+                by_type,
+
+            'recent_logs':
+                recent_logs
         }
     )
 
@@ -798,7 +791,9 @@ def report_csv(request):
         content_type='text/csv'
     )
 
-    response['Content-Disposition'] = (
+    response[
+        'Content-Disposition'
+    ] = (
         'attachment; '
         'filename="certificate_requests.csv"'
     )
@@ -807,30 +802,40 @@ def report_csv(request):
         response
     )
 
-    writer.writerow([
-        'Reference',
-        'Resident',
-        'Type',
-        'Status',
-        'Requested'
-    ])
+    writer.writerow(
+        [
+            'Reference',
+            'Resident',
+            'Type',
+            'Status',
+            'Requested'
+        ]
+    )
 
     requests = (
         CertificateRequest.objects
-        .select_related('resident')
+        .select_related(
+            'resident'
+        )
     )
 
     for obj in requests:
 
-        writer.writerow([
-            obj.reference_no,
-            obj.resident.full_name,
-            obj.get_certificate_type_display(),
-            obj.status,
-            obj.requested_at.strftime(
-                '%Y-%m-%d'
-            )
-        ])
+        writer.writerow(
+            [
+                obj.reference_no,
+
+                obj.resident.full_name,
+
+                obj.get_certificate_type_display(),
+
+                obj.status,
+
+                obj.requested_at.strftime(
+                    '%Y-%m-%d'
+                )
+            ]
+        )
 
     return response
 
