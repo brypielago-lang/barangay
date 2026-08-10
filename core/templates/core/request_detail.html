@@ -1,166 +1,167 @@
 {% extends 'core/base.html' %}
 
-{% block title %}
-Request {{ item.reference_no }}
-{% endblock %}
+{% block title %}Certificate Request{% endblock %}
 
 {% block content %}
 
 <div class="container py-4">
 
-    <!-- ================================================= -->
     <!-- HEADER -->
-    <!-- ================================================= -->
-
     <div class="d-flex justify-content-between align-items-center mb-4">
 
         <div>
-            <h2 class="mb-1">
-                Certificate Request
-            </h2>
+            <h1 class="mb-1">Certificate Request</h1>
 
-            <p class="text-muted mb-0">
-                Reference No:
-                <strong>
-                    {{ item.reference_no }}
-                </strong>
-            </p>
+            <div class="text-muted">
+                Reference No: {{ item.reference_no }}
+            </div>
         </div>
 
-        <a
-    href="{% url 'certificate_pdf' item.pk %}?print=1"
-    target="_blank"
-    class="btn btn-primary"
->
-    <i class="bi bi-printer"></i>
-    Print Document
-</a>
+        {% if item.status == 'approved' or item.status == 'released' %}
 
+        <!-- ONLY ONE SET OF BUTTONS -->
+        <div class="d-flex gap-2">
 
-<a
-    href="{% url 'certificate_pdf' item.pk %}?download=pdf"
-    class="btn btn-success"
->
-    <i class="bi bi-file-earmark-pdf"></i>
-    Download PDF
-</a>
+            <!-- PRINT -->
+            <a
+                href="{% url 'certificate_pdf' item.pk %}"
+                target="_blank"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-printer"></i>
+                Print Document
+            </a>
+
+            <!-- DOWNLOAD PDF -->
+            <a
+                href="{% url 'certificate_pdf' item.pk %}?download=pdf"
+                class="btn btn-success"
+            >
+                <i class="bi bi-file-earmark-pdf"></i>
+                Download PDF
+            </a>
+
+        </div>
+
+        {% endif %}
+
     </div>
 
 
-    <!-- ================================================= -->
     <!-- REQUEST INFORMATION -->
-    <!-- ================================================= -->
-
-    <div class="card shadow-sm mb-4">
+    <div class="card mb-4">
 
         <div class="card-body">
 
-            <h5 class="card-title mb-4">
+            <h4 class="mb-4">
                 Request Information
-            </h5>
+            </h4>
 
-            <div class="row g-3">
+            <div class="row">
 
+                <!-- LEFT -->
                 <div class="col-md-6">
 
-                    <strong>Resident</strong>
-
-                    <div>
-                        {{ item.resident.full_name }}
+                    <div class="mb-4">
+                        <strong>Resident</strong>
+                        <div>
+                            {{ item.resident.full_name }}
+                        </div>
                     </div>
+
+                    <div class="mb-4">
+                        <strong>Reference Number</strong>
+                        <div>
+                            {{ item.reference_no }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <strong>Status</strong>
+                        <div>
+
+                            {% if item.status == 'approved' %}
+
+                                <span class="badge bg-success">
+                                    Approved
+                                </span>
+
+                            {% elif item.status == 'released' %}
+
+                                <span class="badge bg-success">
+                                    Released
+                                </span>
+
+                            {% elif item.status == 'pending' %}
+
+                                <span class="badge bg-warning text-dark">
+                                    Pending
+                                </span>
+
+                            {% elif item.status == 'rejected' %}
+
+                                <span class="badge bg-danger">
+                                    Rejected
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-secondary">
+                                    {{ item.status|title }}
+                                </span>
+
+                            {% endif %}
+
+                        </div>
+                    </div>
+
+                    {% if item.remarks %}
+
+                    <div class="mb-2">
+                        <strong>Remarks</strong>
+
+                        <div>
+                            {{ item.remarks }}
+                        </div>
+                    </div>
+
+                    {% endif %}
 
                 </div>
 
 
+                <!-- RIGHT -->
                 <div class="col-md-6">
 
-                    <strong>Certificate Type</strong>
+                    <div class="mb-4">
+                        <strong>Certificate Type</strong>
 
-                    <div>
-                        {{ item.get_certificate_type_display }}
+                        <div>
+                            {{ item.get_certificate_type_display }}
+                        </div>
                     </div>
 
-                </div>
+                    <div class="mb-4">
+                        <strong>Date Requested</strong>
 
-
-                <div class="col-md-6">
-
-                    <strong>Reference Number</strong>
-
-                    <div>
-                        {{ item.reference_no }}
+                        <div>
+                            {{ item.requested_at|date:"F j, Y h:i A" }}
+                        </div>
                     </div>
 
-                </div>
+                    {% if item.purpose %}
 
+                    <div class="mb-4">
+                        <strong>Purpose</strong>
 
-                <div class="col-md-6">
-
-                    <strong>Date Requested</strong>
-
-                    <div>
-                        {{ item.requested_at|date:"F d, Y h:i A" }}
+                        <div>
+                            {{ item.purpose }}
+                        </div>
                     </div>
 
-                </div>
-
-
-                <div class="col-md-6">
-
-                    <strong>Status</strong>
-
-                    <div class="mt-1">
-
-                        {% if item.status == 'pending' %}
-
-                            <span class="badge bg-warning text-dark">
-                                Pending
-                            </span>
-
-                        {% elif item.status == 'approved' %}
-
-                            <span class="badge bg-success">
-                                Approved
-                            </span>
-
-                        {% elif item.status == 'released' %}
-
-                            <span class="badge bg-primary">
-                                Released
-                            </span>
-
-                        {% elif item.status == 'rejected' %}
-
-                            <span class="badge bg-danger">
-                                Rejected
-                            </span>
-
-                        {% else %}
-
-                            <span class="badge bg-secondary">
-                                {{ item.status|title }}
-                            </span>
-
-                        {% endif %}
-
-                    </div>
+                    {% endif %}
 
                 </div>
-
-
-                {% if item.remarks %}
-
-                <div class="col-12">
-
-                    <strong>Remarks</strong>
-
-                    <div class="mt-1">
-                        {{ item.remarks }}
-                    </div>
-
-                </div>
-
-                {% endif %}
 
             </div>
 
@@ -169,81 +170,59 @@ Request {{ item.reference_no }}
     </div>
 
 
-    <!-- ================================================= -->
-    <!-- APPROVED DOCUMENT -->
-    <!-- ================================================= -->
-
+    <!-- CERTIFICATE DOCUMENT -->
     {% if item.status == 'approved' or item.status == 'released' %}
 
-    <div class="card shadow-sm">
+    <div class="card">
 
         <div class="card-body">
 
-            <h5 class="card-title">
+            <h4 class="mb-2">
                 Certificate Document
-            </h5>
+            </h4>
 
-            <p class="text-muted">
+            <p class="text-muted mb-0">
                 Your certificate has been approved.
-                You can print it or download a PDF copy.
+                Use the buttons above to print or download your certificate.
             </p>
-
-
-            <div class="d-flex flex-wrap gap-2 mt-3">
-
-
-                <!-- ===================================== -->
-                <!-- PRINT DOCUMENT -->
-                <!-- ===================================== -->
-
-                <a
-                    href="{% url 'certificate_pdf' item.pk %}?print=1"
-                    target="_blank"
-                    class="btn btn-primary"
-                >
-
-                    <i class="bi bi-printer"></i>
-
-                    Print Document
-
-                </a>
-
-
-                <!-- ===================================== -->
-                <!-- DOWNLOAD PDF -->
-                <!-- ===================================== -->
-
-                <a
-                    href="{% url 'certificate_pdf' item.pk %}?download=pdf"
-                    class="btn btn-success"
-                >
-
-                    <i class="bi bi-file-earmark-pdf"></i>
-
-                    Download PDF
-
-                </a>
-
-            </div>
 
         </div>
 
     </div>
 
-    {% else %}
+    {% elif item.status == 'pending' %}
 
-    <!-- ================================================= -->
-    <!-- NOT YET APPROVED -->
-    <!-- ================================================= -->
+    <div class="card">
 
-    <div class="alert alert-warning">
+        <div class="card-body">
 
-        <i class="bi bi-hourglass-split"></i>
+            <h4 class="mb-2">
+                Certificate Document
+            </h4>
 
-        Your certificate is not yet available.
+            <p class="text-muted mb-0">
+                Your request is still being reviewed by the barangay.
+            </p>
 
-        Please wait for the barangay administrator
-        to approve your request.
+        </div>
+
+    </div>
+
+    {% elif item.status == 'rejected' %}
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <h4 class="mb-2">
+                Certificate Document
+            </h4>
+
+            <p class="text-danger mb-0">
+                Your request has been rejected.
+            </p>
+
+        </div>
 
     </div>
 
