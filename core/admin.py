@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.core.mail import send_mail
+from django.conf import settings
 from django.utils import timezone
 
 from .models import (
@@ -141,7 +143,6 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         if change and obj.pk:
 
             try:
-
                 old_obj = CertificateRequest.objects.get(
                     pk=obj.pk
                 )
@@ -149,7 +150,6 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 old_status = old_obj.status
 
             except CertificateRequest.DoesNotExist:
-
                 old_status = None
 
         # =====================================================
@@ -161,7 +161,6 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             'rejected',
             'released',
         ):
-
             obj.reviewed_by = request.user
 
         # =====================================================
@@ -172,9 +171,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             'approved',
             'rejected',
         ):
-
             if not obj.reviewed_at:
-
                 obj.reviewed_at = timezone.now()
 
         # =====================================================
@@ -182,13 +179,11 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         # =====================================================
 
         if obj.status == 'released':
-
             if not obj.released_at:
-
                 obj.released_at = timezone.now()
 
         # =====================================================
-        # SAVE REQUEST
+        # SAVE REQUEST FIRST
         # =====================================================
 
         super().save_model(
@@ -199,11 +194,10 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         # =====================================================
-        # ONLY NOTIFY WHEN STATUS CHANGED
+        # ONLY SEND NOTIFICATION WHEN STATUS CHANGES
         # =====================================================
 
         if old_status == obj.status:
-
             return
 
         # =====================================================
@@ -213,27 +207,20 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         resident = obj.resident
 
         if not resident:
-
-            print(
-                'NOTIFICATION ERROR: '
-                'Request has no resident.'
-            )
-
+            print("NOTIFICATION ERROR: No resident.")
             return
 
         # =====================================================
         # GET USER
         # =====================================================
 
-        user = resident.user
+        user = getattr(resident, 'user', None)
 
         if not user:
-
             print(
-                'NOTIFICATION ERROR: '
-                'Resident has no linked user.'
+                "NOTIFICATION ERROR: "
+                "Resident has no linked user."
             )
-
             return
 
         # =====================================================
@@ -247,7 +234,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         # =====================================================
-        # NOTIFICATION TITLE
+        # TITLE
         # =====================================================
 
         title = (
@@ -255,7 +242,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         # =====================================================
-        # NOTIFICATION MESSAGE
+        # MESSAGE
         # =====================================================
 
         message = (
@@ -265,7 +252,6 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         if obj.remarks:
-
             message += (
                 f'\n\nRemarks: {obj.remarks}'
             )
@@ -284,42 +270,35 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             )
 
             print(
-                f'NOTIFICATION CREATED FOR USER: '
+                'NOTIFICATION CREATED FOR USER: '
                 f'{user.username}'
             )
 
         except Exception as e:
 
             print(
-                f'NOTIFICATION ERROR: {repr(e)}'
+                'NOTIFICATION ERROR: '
+                f'{repr(e)}'
             )
 
         # =====================================================
         # EMAIL
         # =====================================================
-        #
-        # IMPORTANT:
-        # Email must NEVER stop the admin save.
-        #
-        # If email settings are missing or SMTP fails,
-        # the notification above will still remain.
-        #
-        # =====================================================
 
-        if not user.email:
+        email = getattr(user, 'email', None)
 
+        if not email:
             print(
-                f'EMAIL NOT SENT: '
+                'EMAIL NOT SENT: '
                 f'{user.username} has no email.'
             )
-
             return
 
         try:
 
             print(
-                f'SENDING EMAIL TO: '
-                f'{user.email}'
+                'SENDING EMAIL TO: '
+                f'{email}'
             )
 
             send_mail(
@@ -328,27 +307,24 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 from_email=getattr(
                     settings,
                     'DEFAULT_FROM_EMAIL',
-                    None
+                    settings.EMAIL_HOST_USER
                 ),
-                recipient_list=[
-                    user.email
-                ],
+                recipient_list=[email],
                 fail_silently=True,
             )
 
             print(
-                f'EMAIL PROCESS FINISHED FOR: '
-                f'{user.email}'
+                'EMAIL PROCESS FINISHED FOR: '
+                f'{email}'
             )
 
         except Exception as e:
 
-            # =================================================
-            # NEVER BREAK ADMIN IF EMAIL FAILS
-            # =================================================
+            # Email failure must NOT break admin.
 
             print(
-                f'EMAIL ERROR: {repr(e)}'
+                'EMAIL ERROR: '
+                f'{repr(e)}'
             )
 
 
