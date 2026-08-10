@@ -28,12 +28,10 @@ def create_admin_user(sender, **kwargs):
         },
     )
 
-    if created:
-        user.set_password(password)
-    else:
+    if not created:
         user.email = email or user.email
-        user.is_staff = True
-        user.is_superuser = True
-        user.set_password(password)
 
+    user.is_staff = True
+    user.is_superuser = True
+    user.set_password(password)
     user.save()
