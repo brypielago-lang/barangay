@@ -102,7 +102,7 @@ class IDTemplateAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(CertificateRequest)
-class CertificateRequestAdmin:
+class CertificateRequestAdmin(admin.ModelAdmin):
 
     list_display = (
         'reference_no',
@@ -154,7 +154,6 @@ class CertificateRequestAdmin:
 
                 old_status = None
 
-
         # =====================================================
         # REVIEWED BY
         # =====================================================
@@ -166,7 +165,6 @@ class CertificateRequestAdmin:
         ):
 
             obj.reviewed_by = request.user
-
 
         # =====================================================
         # REVIEWED DATE
@@ -181,7 +179,6 @@ class CertificateRequestAdmin:
 
                 obj.reviewed_at = timezone.now()
 
-
         # =====================================================
         # RELEASED DATE
         # =====================================================
@@ -192,9 +189,8 @@ class CertificateRequestAdmin:
 
                 obj.released_at = timezone.now()
 
-
         # =====================================================
-        # SAVE REQUEST FIRST
+        # SAVE REQUEST
         # =====================================================
 
         super().save_model(
@@ -204,21 +200,32 @@ class CertificateRequestAdmin:
             change
         )
 
-
         # =====================================================
-        # STATUS CHANGED?
+        # ONLY NOTIFY WHEN STATUS CHANGED
         # =====================================================
 
         if old_status == obj.status:
 
             return
 
+        # =====================================================
+        # GET RESIDENT
+        # =====================================================
+
+        resident = obj.resident
+
+        if not resident:
+
+            print(
+                'NOTIFICATION ERROR: '
+                'Request has no resident.'
+            )
+
+            return
 
         # =====================================================
         # GET USER
         # =====================================================
-
-        resident = obj.resident
 
         user = resident.user
 
@@ -231,7 +238,6 @@ class CertificateRequestAdmin:
 
             return
 
-
         # =====================================================
         # STATUS TEXT
         # =====================================================
@@ -242,7 +248,6 @@ class CertificateRequestAdmin:
             obj.get_certificate_type_display()
         )
 
-
         # =====================================================
         # NOTIFICATION TITLE
         # =====================================================
@@ -250,7 +255,6 @@ class CertificateRequestAdmin:
         title = (
             f'Certificate Request {status_text}'
         )
-
 
         # =====================================================
         # NOTIFICATION MESSAGE
@@ -262,13 +266,11 @@ class CertificateRequestAdmin:
             f'is now {status_text.lower()}.'
         )
 
-
         if obj.remarks:
 
             message += (
                 f'\n\nRemarks: {obj.remarks}'
             )
-
 
         # =====================================================
         # WEBSITE NOTIFICATION
@@ -277,13 +279,9 @@ class CertificateRequestAdmin:
         try:
 
             Notification.objects.create(
-
                 user=user,
-
                 title=title,
-
                 message=message,
-
                 url=f'/requests/{obj.pk}/'
             )
 
@@ -298,9 +296,16 @@ class CertificateRequestAdmin:
                 f'NOTIFICATION ERROR: {repr(e)}'
             )
 
-
         # =====================================================
         # EMAIL
+        # =====================================================
+        #
+        # IMPORTANT:
+        # Email must NEVER stop the admin save.
+        #
+        # If email settings are missing or SMTP fails,
+        # the notification above will still remain.
+        #
         # =====================================================
 
         if not user.email:
@@ -312,7 +317,6 @@ class CertificateRequestAdmin:
 
             return
 
-
         try:
 
             print(
@@ -321,23 +325,17 @@ class CertificateRequestAdmin:
             )
 
             send_mail(
-
                 subject=title,
-
                 message=message,
-
                 from_email=getattr(
                     settings,
                     'DEFAULT_FROM_EMAIL',
-                    settings.EMAIL_HOST_USER
+                    None
                 ),
-
                 recipient_list=[
                     user.email
                 ],
-
                 fail_silently=True,
-
             )
 
             print(
@@ -347,8 +345,9 @@ class CertificateRequestAdmin:
 
         except Exception as e:
 
-            # IMPORTANT:
-            # Email failure MUST NOT break admin.
+            # =================================================
+            # NEVER BREAK ADMIN IF EMAIL FAILS
+            # =================================================
 
             print(
                 f'EMAIL ERROR: {repr(e)}'
