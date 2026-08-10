@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>Barangay Clearance - {{ resident.full_name }}</title>
+
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: "Times New Roman", Times, serif;
+            color: #111;
+        }
+
+        .certificate {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 18mm 20mm 15mm 20mm;
+            margin: auto;
+            position: relative;
+        }
+
+        /* ================= HEADER ================= */
+
+        .header {
+            width: 100%;
+            text-align: center;
+            position: relative;
+            min-height: 70px;
+        }
+
+        .logo-left,
+        .logo-center,
+        .logo-right {
+            position: absolute;
+            top: 0;
+            object-fit: contain;
+        }
+
+        .logo-left {
+            left: 5px;
+            width: 65px;
+            height: 65px;
+        }
+
+        .logo-center {
+            left: 50%;
+            transform: translateX(-50%);
+            width: 65px;
+            height: 65px;
+        }
+
+        .logo-right {
+            right: 5px;
+            width: 65px;
+            height: 65px;
+        }
+
+        .header-text {
+            padding-top: 1px;
+            line-height: 1.15;
+            font-size: 13px;
+        }
+
+        .header-text .republic {
+            font-size: 13px;
+        }
+
+        .header-text .province {
+            font-size: 13px;
+        }
+
+        .header-text .municipality {
+            font-size: 13px;
+        }
+
+        .header-text .barangay {
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        /* ================= OFFICE ================= */
+
+        .office {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 12px;
+        }
+
+        /* ================= TITLE ================= */
+
+        .title {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-top: 18px;
+        }
+
+        /* ================= DATE ================= */
+
+        .date {
+            text-align: right;
+            margin-top: 35px;
+            font-size: 13px;
+        }
+
+        /* ================= BODY ================= */
+
+        .to-whom {
+            margin-top: 28px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .body {
+            margin-top: 16px;
+            font-size: 13px;
+            line-height: 1.45;
+            text-align: justify;
+        }
+
+        .body p {
+            margin: 0 0 13px 0;
+        }
+
+        .center-text {
+            text-align: center;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        /* ================= SIGNATURES ================= */
+
+        .signatures {
+            width: 100%;
+            margin-top: 35px;
+            display: table;
+            table-layout: fixed;
+        }
+
+        .signature-left,
+        .signature-right {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .signature-left {
+            width: 55%;
+        }
+
+        .signature-right {
+            width: 45%;
+            text-align: center;
+        }
+
+        .applicant-name {
+            font-weight: bold;
+            text-decoration: underline;
+            font-size: 13px;
+        }
+
+        .signature-label {
+            font-size: 12px;
+        }
+
+        .captain-name {
+            font-size: 13px;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+        .captain-title {
+            font-size: 12px;
+        }
+
+        /* ================= FEES ================= */
+
+        .fees {
+            margin-top: 28px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .fees-row {
+            display: flex;
+        }
+
+        .fees-label {
+            width: 75px;
+        }
+
+        .fees-value {
+            text-decoration: underline;
+        }
+
+        /* ================= FOOTER ================= */
+
+        .note {
+            margin-top: 28px;
+            font-size: 12px;
+        }
+
+        /* ================= PRINT ================= */
+
+        @media print {
+
+            body {
+                background: white;
+            }
+
+            .certificate {
+                width: 210mm;
+                min-height: 297mm;
+                margin: 0;
+                padding: 18mm 20mm 15mm 20mm;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="certificate">
+
+    <!-- ================= HEADER ================= -->
+
+    <div class="header">
+
+        <!-- LEFT LOGO -->
+        {% if barangay.logo %}
+            <img
+                src="{{ barangay.logo.url }}"
+                class="logo-left"
+                alt="Barangay Logo"
+            >
+        {% endif %}
+
+        <!-- CENTER LOGO -->
+        {% if barangay.municipality_logo %}
+            <img
+                src="{{ barangay.municipality_logo.url }}"
+                class="logo-center"
+                alt="Municipality Logo"
+            >
+        {% endif %}
+
+        <!-- RIGHT LOGO -->
+        {% if barangay.logo %}
+            <img
+                src="{{ barangay.logo.url }}"
+                class="logo-right"
+                alt="Barangay Seal"
+            >
+        {% endif %}
+
+        <div class="header-text">
+
+            <div class="republic">
+                Republic of the Philippines
+            </div>
+
+            <div class="province">
+                Province of {{ barangay.province }}
+            </div>
+
+            <div class="municipality">
+                Municipality of {{ barangay.municipality }}
+            </div>
+
+            <div class="barangay">
+                Barangay {{ barangay.name }}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= OFFICE ================= -->
+
+    <div class="office">
+        OFFICE OF THE PUNONG BARANGAY
+    </div>
+
+
+    <!-- ================= TITLE ================= -->
+
+    <div class="title">
+        BARANGAY CLEARANCE
+    </div>
+
+
+    <!-- ================= DATE ================= -->
+
+    <div class="date">
+        {{ item.requested_at|date:"F d, Y" }}
+    </div>
+
+
+    <!-- ================= TO WHOM ================= -->
+
+    <div class="to-whom">
+        TO WHOM IT MAY CONCERN:
+    </div>
+
+
+    <!-- ================= BODY ================= -->
+
+    <div class="body">
+
+        <p>
+            This is to certify that
+            <span class="bold">{{ resident.full_name|upper }}</span>,
+            {{ resident.birth_date|timesince }}
+            old,
+            {{ resident.get_civil_status_display|lower }},
+            Filipino,
+            is personally known to me as a resident of
+            <span class="bold">
+                {{ barangay.name }}
+            </span>,
+            {{ barangay.municipality }},
+            {{ barangay.province }},
+            with the following findings:
+        </p>
+
+
+        <p class="center-text bold">
+            - no derogatory/criminal record filed against
+            {{ resident.get_sex_display|default:"the applicant" }}
+            as of this date.
+        </p>
+
+
+        <p class="center-text">
+            This certification is issued upon the request of the
+            above-mentioned person for
+            <span class="bold">
+                {{ item.purpose }}
+            </span>
+            purposes.
+        </p>
+
+    </div>
+
+
+    <!-- ================= SIGNATURES ================= -->
+
+    <div class="signatures">
+
+        <div class="signature-left">
+
+            <div class="applicant-name">
+                {{ resident.full_name|upper }}
+            </div>
+
+            <div class="signature-label">
+                (Name and signature of applicant)
+            </div>
+
+        </div>
+
+
+        <div class="signature-right">
+
+            {% if barangay.captain_name %}
+                <div class="captain-name">
+                    {{ barangay.captain_name|upper }}
+                </div>
+            {% endif %}
+
+            <div class="captain-title">
+                Punong Barangay
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= FEES ================= -->
+
+    <div class="fees">
+
+        <div class="fees-row">
+            <div class="fees-label">
+                Cert. Fee:
+            </div>
+
+            <div class="fees-value">
+                P{{ item.fee|floatformat:2 }}
+            </div>
+        </div>
+
+
+        <div class="fees-row">
+            <div class="fees-label">
+                OR No.:
+            </div>
+
+            <div class="fees-value">
+                __________________
+            </div>
+        </div>
+
+
+        <div class="fees-row">
+            <div class="fees-label">
+                DST Paid:
+            </div>
+
+            <div class="fees-value">
+                P30.00
+            </div>
+        </div>
+
+
+        <div class="fees-row">
+            <div class="fees-label">
+                Date:
+            </div>
+
+            <div class="fees-value">
+                {{ item.requested_at|date:"F d, Y" }}
+            </div>
+        </div>
+
+    </div>
+
+
+    <!-- ================= NOTE ================= -->
+
+    <div class="note">
+        Note: Not Valid Without Barangay Seal.
+    </div>
+
+</div>
+
+</body>
+</html>
