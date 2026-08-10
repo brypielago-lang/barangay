@@ -6,6 +6,7 @@ import qrcode
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.core.mail import send_mail
 from django.db.models import Count
 from django.http import HttpResponse, Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,9 +30,7 @@ from .models import (
 # =========================================================
 
 def staff_required(view):
-    return user_passes_test(
-        lambda u: u.is_staff
-    )(view)
+    return user_passes_test(lambda u: u.is_staff)(view)
 
 
 # =========================================================
@@ -61,6 +60,116 @@ def notify_request(request_obj, title, message):
 
 
 # =========================================================
+# EMAIL NOTIFICATION
+# =========================================================
+
+def email_request_status(request_obj, status):
+    """
+    Send an email notification to the resident.
+
+    This function does not stop the request from being
+    approved/rejected if the email fails.
+    """
+
+    user = request_obj.resident.user
+
+    if not user:
+        return
+
+    email = user.email
+
+    if not email:
+        return
+
+    barangay = BarangayProfile.objects.first()
+
+    if barangay:
+        barangay_name = barangay.name
+    else:
+        barangay_name = 'Barangay'
+
+    certificate_name = (
+        request_obj.get_certificate_type_display()
+    )
+
+    if status == 'approved':
+
+        subject = (
+            f'{barangay_name} - Certificate Request Approved'
+        )
+
+        message = f"""
+Hello {request_obj.resident.full_name},
+
+Your certificate request has been APPROVED.
+
+Request Details
+-------------------------
+Reference No.: {request_obj.reference_no}
+Certificate: {certificate_name}
+Purpose: {request_obj.purpose}
+Status: APPROVED
+
+You can now log in to your Barangay Resident Portal
+to print or download your certificate.
+
+Thank you.
+
+{barangay_name}
+Barangay Resident Portal
+"""
+
+    elif status == 'rejected':
+
+        subject = (
+            f'{barangay_name} - Certificate Request Update'
+        )
+
+        message = f"""
+Hello {request_obj.resident.full_name},
+
+Your certificate request has been REJECTED.
+
+Request Details
+-------------------------
+Reference No.: {request_obj.reference_no}
+Certificate: {certificate_name}
+Status: REJECTED
+
+Remarks:
+{request_obj.remarks or 'No remarks provided.'}
+
+Please log in to your Barangay Resident Portal
+for more information.
+
+Thank you.
+
+{barangay_name}
+Barangay Resident Portal
+"""
+
+    else:
+        return
+
+    try:
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=None,
+            recipient_list=[email],
+            fail_silently=True
+        )
+
+    except Exception as e:
+
+        print(
+            'EMAIL NOTIFICATION ERROR:',
+            repr(e)
+        )
+
+
+# =========================================================
 # SIGN UP
 # =========================================================
 
@@ -84,7 +193,9 @@ def signup(request):
                 'Your account is ready. Please complete your resident profile.'
             )
 
-            return redirect('profile')
+            return redirect(
+                'profile'
+            )
 
     else:
 
@@ -112,7 +223,10 @@ def dashboard(request):
         None
     )
 
-    # ADMIN / STAFF
+    # =====================================================
+    # STAFF / ADMIN DASHBOARD
+    # =====================================================
+
     if request.user.is_staff:
 
         context = {
@@ -134,9 +248,7 @@ def dashboard(request):
 
             'recent':
                 CertificateRequest.objects
-                .select_related(
-                    'resident'
-                )[:8],
+                .select_related('resident')[:8],
         }
 
         return render(
@@ -145,7 +257,10 @@ def dashboard(request):
             context
         )
 
-    # RESIDENT
+    # =====================================================
+    # RESIDENT DASHBOARD
+    # =====================================================
+
     return render(
         request,
         'core/dashboard.html',
@@ -307,12 +422,13 @@ def request_detail(request, pk):
 
     obj = get_object_or_404(
         CertificateRequest.objects.select_related(
-            'resident'
+            'resident',
+            'resident__user'
         ),
         pk=pk
     )
 
-    # SECURITY
+    # Resident can only see own request
     if (
         not request.user.is_staff
         and obj.resident.user_id != request.user.id
@@ -344,21 +460,15 @@ def staff_requests(request):
 
         items = (
             CertificateRequest.objects
-            .select_related(
-                'resident'
-            )
-            .filter(
-                status=status
-            )
+            .select_related('resident')
+            .filter(status=status)
         )
 
     else:
 
         items = (
             CertificateRequest.objects
-            .select_related(
-                'resident'
-            )
+            .select_related('resident')
         )
 
     return render(
@@ -385,16 +495,18 @@ def update_request(request, pk):
 
     if request.method == 'POST':
 
-        status = request.POST.get(
+        new_status = request.POST.get(
             'status'
         )
 
-        if status in dict(
+        if new_status in dict(
             CertificateRequest.STATUS
         ):
 
-            obj.status = status
+            # Save the OLD status first.
+            old_status = obj.status
 
+            # New remarks
             obj.remarks = request.POST.get(
                 'remarks',
                 ''
@@ -402,34 +514,81 @@ def update_request(request, pk):
 
             obj.reviewed_by = request.user
 
-            if status in (
+            # =================================================
+            # STATUS
+            # =================================================
+
+            obj.status = new_status
+
+            # =================================================
+            # APPROVED / REJECTED DATE
+            # =================================================
+
+            if new_status in (
                 'approved',
                 'rejected'
             ):
 
                 obj.reviewed_at = timezone.now()
 
-            if status == 'released':
+            # =================================================
+            # RELEASED DATE
+            # =================================================
+
+            if new_status == 'released':
 
                 obj.released_at = timezone.now()
 
+            # =================================================
+            # SAVE REQUEST
+            # =================================================
+
             obj.save()
+
+            # =================================================
+            # IN-APP NOTIFICATION
+            # =================================================
 
             notify_request(
                 obj,
-                f'Request {status.title()}',
+
+                f'Request {new_status.title()}',
+
                 (
                     f'Your '
                     f'{obj.get_certificate_type_display()} '
                     f'request '
                     f'({obj.reference_no}) '
-                    f'is now {status}.'
+                    f'is now {new_status}.'
                 )
             )
 
+            # =================================================
+            # EMAIL
+            #
+            # Only send when the status actually changes.
+            # This prevents duplicate emails.
+            # =================================================
+
+            if old_status != new_status:
+
+                if new_status in (
+                    'approved',
+                    'rejected'
+                ):
+
+                    email_request_status(
+                        obj,
+                        new_status
+                    )
+
+            # =================================================
+            # ACTIVITY LOG
+            # =================================================
+
             log(
                 request.user,
-                f'Changed request to {status}',
+                f'Changed request to {new_status}',
                 obj.reference_no
             )
 
@@ -445,15 +604,11 @@ def update_request(request, pk):
 
 
 # =========================================================
-# CERTIFICATE DOCUMENT
+# CERTIFICATE / DOCUMENT
 # =========================================================
 
 @login_required
 def certificate_pdf(request, pk):
-
-    # -----------------------------------------------------
-    # GET REQUEST
-    # -----------------------------------------------------
 
     obj = get_object_or_404(
         CertificateRequest.objects.select_related(
@@ -462,20 +617,14 @@ def certificate_pdf(request, pk):
         pk=pk
     )
 
-    # -----------------------------------------------------
-    # SECURITY
-    # -----------------------------------------------------
-
+    # User can only view their own certificate
     if (
         not request.user.is_staff
         and obj.resident.user_id != request.user.id
     ):
         raise Http404
 
-    # -----------------------------------------------------
-    # APPROVAL CHECK
-    # -----------------------------------------------------
-
+    # Certificate must be approved or released
     if obj.status not in (
         'approved',
         'released'
@@ -491,9 +640,9 @@ def certificate_pdf(request, pk):
             pk=pk
         )
 
-    # -----------------------------------------------------
+    # =====================================================
     # CERTIFICATE TEMPLATES
-    # -----------------------------------------------------
+    # =====================================================
 
     certificate_templates = {
 
@@ -515,21 +664,22 @@ def certificate_pdf(request, pk):
 
     template_name = certificate_templates.get(
         obj.certificate_type,
-        'core/residency.html'
+        'core/certificates/default.html'
     )
 
-    # -----------------------------------------------------
+    # =====================================================
     # BARANGAY PROFILE
-    # -----------------------------------------------------
+    # =====================================================
 
     barangay = BarangayProfile.objects.first()
 
     if barangay is None:
+
         barangay = BarangayProfile()
 
-    # -----------------------------------------------------
-    # ADMIN CERTIFICATE TEMPLATE
-    # -----------------------------------------------------
+    # =====================================================
+    # ADMIN EDITABLE CERTIFICATE TEMPLATE
+    # =====================================================
 
     certificate_template = (
         CertificateTemplate.objects
@@ -556,9 +706,9 @@ def certificate_pdf(request, pk):
 
         footer = ''
 
-    # -----------------------------------------------------
+    # =====================================================
     # CERTIFICATE BODY
-    # -----------------------------------------------------
+    # =====================================================
 
     body = ''
 
@@ -583,10 +733,6 @@ def certificate_pdf(request, pk):
                 }
             )
         )
-
-    # -----------------------------------------------------
-    # CONTEXT
-    # -----------------------------------------------------
 
     context = {
 
@@ -624,49 +770,28 @@ def certificate_pdf(request, pk):
 
             from weasyprint import HTML
 
-            # Render HTML
             html = render_to_string(
                 template_name,
                 context,
                 request=request
             )
 
-            # Convert HTML -> PDF
             pdf = HTML(
                 string=html,
                 base_url=request.build_absolute_uri('/')
             ).write_pdf()
 
-            # PDF response
             response = HttpResponse(
                 pdf,
                 content_type='application/pdf'
             )
 
-            response[
-                'Content-Disposition'
-            ] = (
-                'attachment; '
+            response['Content-Disposition'] = (
+                f'attachment; '
                 f'filename="{obj.reference_no}.pdf"'
             )
 
             return response
-
-        except ImportError:
-
-            print(
-                'PDF ERROR: WeasyPrint is not installed.'
-            )
-
-            messages.error(
-                request,
-                'PDF download is not available on the server yet.'
-            )
-
-            return redirect(
-                'request_detail',
-                pk=obj.pk
-            )
 
         except Exception as e:
 
@@ -677,7 +802,7 @@ def certificate_pdf(request, pk):
 
             messages.error(
                 request,
-                'There was an error generating the PDF.'
+                'PDF download failed. Please try Print Document.'
             )
 
             return redirect(
@@ -725,6 +850,7 @@ def notifications(request):
 
     notes = request.user.notifications.all()
 
+    # Mark unread notifications as read
     notes.filter(
         is_read=False
     ).update(
@@ -762,20 +888,15 @@ def reports(request):
 
     recent_logs = (
         ActivityLog.objects
-        .select_related(
-            'user'
-        )[:15]
+        .select_related('user')[:15]
     )
 
     return render(
         request,
         'core/reports.html',
         {
-            'by_type':
-                by_type,
-
-            'recent_logs':
-                recent_logs
+            'by_type': by_type,
+            'recent_logs': recent_logs
         }
     )
 
@@ -791,9 +912,7 @@ def report_csv(request):
         content_type='text/csv'
     )
 
-    response[
-        'Content-Disposition'
-    ] = (
+    response['Content-Disposition'] = (
         'attachment; '
         'filename="certificate_requests.csv"'
     )
@@ -814,9 +933,7 @@ def report_csv(request):
 
     requests = (
         CertificateRequest.objects
-        .select_related(
-            'resident'
-        )
+        .select_related('resident')
     )
 
     for obj in requests:
