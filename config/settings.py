@@ -13,8 +13,16 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
-    'django.contrib.admin', 'django.contrib.auth', 'django.contrib.contenttypes',
-    'django.contrib.sessions', 'django.contrib.messages', 'django.contrib.staticfiles',
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+
+    'cloudinary',
+    'cloudinary_storage',
+
     'core.apps.CoreConfig',
 ]
 MIDDLEWARE = [
@@ -62,3 +70,12 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'login'
 LOGIN_URL = 'login'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
