@@ -85,6 +85,7 @@ def update_request(request, pk):
             log(request.user, f'Changed request to {status}', obj.reference_no); messages.success(request, 'Request updated.')
     return redirect('request_detail', pk=pk)
 
+@login_required
 def certificate_pdf(request, pk):
     obj = get_object_or_404(
         CertificateRequest.objects.select_related('resident'),
@@ -104,7 +105,10 @@ def certificate_pdf(request, pk):
         )
         return redirect('request_detail', pk=pk)
 
-    # Select the correct certificate HTML template
+    # ==========================================
+    # SELECT CERTIFICATE TEMPLATE
+    # ==========================================
+
     certificate_templates = {
         'indigency': 'core/certificates/indigency.html',
         'clearance': 'core/certificates/clearance.html',
@@ -118,24 +122,32 @@ def certificate_pdf(request, pk):
         'core/certificates/default.html'
     )
 
-    # Barangay information
+    # ==========================================
+    # BARANGAY PROFILE
+    # ==========================================
+
     barangay = BarangayProfile.objects.first()
 
     if not barangay:
         barangay = BarangayProfile()
 
-    # Get editable template from Django Admin
+    # ==========================================
+    # ADMIN CERTIFICATE TEMPLATE
+    # ==========================================
+
     certificate_template = CertificateTemplate.objects.filter(
         certificate_type=obj.certificate_type
     ).first()
 
-    # Certificate title
     if certificate_template:
         title = certificate_template.title
     else:
         title = obj.get_certificate_type_display()
 
-    # Certificate body
+    # ==========================================
+    # BODY
+    # ==========================================
+
     body = ''
 
     if certificate_template and certificate_template.body:
@@ -149,7 +161,10 @@ def certificate_pdf(request, pk):
             })
         )
 
-    # Template context
+    # ==========================================
+    # CONTEXT
+    # ==========================================
+
     context = {
         'item': obj,
         'resident': obj.resident,
@@ -164,8 +179,12 @@ def certificate_pdf(request, pk):
         ),
     }
 
-    # Download as PDF
+    # ==========================================
+    # PDF DOWNLOAD
+    # ==========================================
+
     if request.GET.get('download') == 'pdf':
+
         try:
             from weasyprint import HTML
 
@@ -186,18 +205,31 @@ def certificate_pdf(request, pk):
             )
 
             response['Content-Disposition'] = (
-                f'attachment; filename="{obj.reference_no}.pdf"'
+                f'inline; filename="{obj.reference_no}.pdf"'
             )
 
             return response
 
-        except (ImportError, OSError):
+        except Exception as e:
+
+            # Huwag hayaang maging Server Error 500
+            print("PDF ERROR:", e)
+
             messages.warning(
                 request,
-                'PDF support is unavailable; use browser print to save as PDF.'
+                'PDF generation is unavailable. The certificate will be opened for browser printing.'
             )
 
-    # Show certificate in browser
+            return render(
+                request,
+                template_name,
+                context
+            )
+
+    # ==========================================
+    # NORMAL BROWSER VIEW / PRINT
+    # ==========================================
+
     return render(
         request,
         template_name,
