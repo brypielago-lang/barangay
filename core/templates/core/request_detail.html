@@ -1,165 +1,245 @@
 {% extends 'core/base.html' %}
 
+{% block title %}
+Request {{ item.reference_no }}
+{% endblock %}
+
 {% block content %}
 
-<div class="d-flex justify-content-between align-items-start">
+<div class="container py-4">
 
-    <div>
-        <span class="eyebrow">
-            <i class="bi bi-patch-check"></i>
-            {{ item.reference_no }}
-        </span>
+    <!-- ================================================= -->
+    <!-- HEADER -->
+    <!-- ================================================= -->
 
-        <h2 class="mt-3">
-            {{ item.get_certificate_type_display }}
-        </h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="mb-1">
+                Certificate Request
+            </h2>
+
+            <p class="text-muted mb-0">
+                Reference No:
+                <strong>
+                    {{ item.reference_no }}
+                </strong>
+            </p>
+        </div>
+
+        <a
+            href="{% url 'dashboard' %}"
+            class="btn btn-outline-secondary"
+        >
+            <i class="bi bi-arrow-left"></i>
+            Back
+        </a>
+
     </div>
 
-    <span class="badge fs-6 text-bg-{{ item.status }}">
-        {{ item.get_status_display }}
-    </span>
 
-</div>
+    <!-- ================================================= -->
+    <!-- REQUEST INFORMATION -->
+    <!-- ================================================= -->
 
+    <div class="card shadow-sm mb-4">
 
-<div class="card mt-3">
+        <div class="card-body">
 
-    <div class="card-body p-4">
+            <h5 class="card-title mb-4">
+                Request Information
+            </h5>
 
-        <dl class="row mb-3">
+            <div class="row g-3">
 
-            <dt class="col-sm-3">
-                Resident
-            </dt>
+                <div class="col-md-6">
 
-            <dd class="col-sm-9">
-                {{ item.resident.full_name }}
-            </dd>
+                    <strong>Resident</strong>
 
+                    <div>
+                        {{ item.resident.full_name }}
+                    </div>
 
-            <dt class="col-sm-3">
-                Purpose
-            </dt>
-
-            <dd class="col-sm-9">
-                {{ item.purpose }}
-            </dd>
+                </div>
 
 
-            {% if item.business_name %}
-            <dt class="col-sm-3">
-                Business Name
-            </dt>
+                <div class="col-md-6">
 
-            <dd class="col-sm-9">
-                {{ item.business_name }}
-            </dd>
-            {% endif %}
+                    <strong>Certificate Type</strong>
 
+                    <div>
+                        {{ item.get_certificate_type_display }}
+                    </div>
 
-            {% if item.business_address %}
-            <dt class="col-sm-3">
-                Business Address
-            </dt>
-
-            <dd class="col-sm-9">
-                {{ item.business_address }}
-            </dd>
-            {% endif %}
+                </div>
 
 
-            <dt class="col-sm-3">
-                Remarks
-            </dt>
+                <div class="col-md-6">
 
-            <dd class="col-sm-9">
-                {{ item.remarks|default:'—' }}
-            </dd>
+                    <strong>Reference Number</strong>
 
-        </dl>
+                    <div>
+                        {{ item.reference_no }}
+                    </div>
 
-
-        {% if item.status == 'approved' or item.status == 'released' %}
-
-        <div class="d-flex gap-2">
-
-            <!-- OPEN CERTIFICATE -->
-            <a
-                target="_blank"
-                href="{% url 'certificate_pdf' item.pk %}"
-                class="primary-action"
-            >
-                <i class="bi bi-printer"></i>
-                Print document
-            </a>
+                </div>
 
 
-            <!-- DOWNLOAD PDF -->
-            <a
-                target="_blank"
-                href="{% url 'certificate_pdf' item.pk %}?download=pdf"
-                class="btn btn-outline-primary"
-            >
-                <i class="bi bi-file-earmark-pdf"></i>
-                Download PDF
-            </a>
+                <div class="col-md-6">
+
+                    <strong>Date Requested</strong>
+
+                    <div>
+                        {{ item.requested_at|date:"F d, Y h:i A" }}
+                    </div>
+
+                </div>
+
+
+                <div class="col-md-6">
+
+                    <strong>Status</strong>
+
+                    <div class="mt-1">
+
+                        {% if item.status == 'pending' %}
+
+                            <span class="badge bg-warning text-dark">
+                                Pending
+                            </span>
+
+                        {% elif item.status == 'approved' %}
+
+                            <span class="badge bg-success">
+                                Approved
+                            </span>
+
+                        {% elif item.status == 'released' %}
+
+                            <span class="badge bg-primary">
+                                Released
+                            </span>
+
+                        {% elif item.status == 'rejected' %}
+
+                            <span class="badge bg-danger">
+                                Rejected
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-secondary">
+                                {{ item.status|title }}
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                {% if item.remarks %}
+
+                <div class="col-12">
+
+                    <strong>Remarks</strong>
+
+                    <div class="mt-1">
+                        {{ item.remarks }}
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+            </div>
 
         </div>
 
-        {% endif %}
+    </div>
+
+
+    <!-- ================================================= -->
+    <!-- APPROVED DOCUMENT -->
+    <!-- ================================================= -->
+
+    {% if item.status == 'approved' or item.status == 'released' %}
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <h5 class="card-title">
+                Certificate Document
+            </h5>
+
+            <p class="text-muted">
+                Your certificate has been approved.
+                You can print it or download a PDF copy.
+            </p>
+
+
+            <div class="d-flex flex-wrap gap-2 mt-3">
+
+
+                <!-- ===================================== -->
+                <!-- PRINT DOCUMENT -->
+                <!-- ===================================== -->
+
+                <a
+                    href="{% url 'certificate_pdf' item.pk %}?print=1"
+                    target="_blank"
+                    class="btn btn-primary"
+                >
+
+                    <i class="bi bi-printer"></i>
+
+                    Print Document
+
+                </a>
+
+
+                <!-- ===================================== -->
+                <!-- DOWNLOAD PDF -->
+                <!-- ===================================== -->
+
+                <a
+                    href="{% url 'certificate_pdf' item.pk %}?download=pdf"
+                    class="btn btn-success"
+                >
+
+                    <i class="bi bi-file-earmark-pdf"></i>
+
+                    Download PDF
+
+                </a>
+
+            </div>
+
+        </div>
 
     </div>
 
+    {% else %}
+
+    <!-- ================================================= -->
+    <!-- NOT YET APPROVED -->
+    <!-- ================================================= -->
+
+    <div class="alert alert-warning">
+
+        <i class="bi bi-hourglass-split"></i>
+
+        Your certificate is not yet available.
+
+        Please wait for the barangay administrator
+        to approve your request.
+
+    </div>
+
+    {% endif %}
+
 </div>
-
-
-{% if user.is_staff %}
-
-<form
-    class="form-surface mt-3"
-    method="post"
-    action="{% url 'update_request' item.pk %}"
->
-
-    {% csrf_token %}
-
-    <h5>
-        Staff action
-    </h5>
-
-
-    <select
-        class="form-select mb-2"
-        name="status"
-    >
-
-        {% for value,label in item.STATUS %}
-
-        <option
-            value="{{ value }}"
-            {% if value == item.status %}selected{% endif %}
-        >
-            {{ label }}
-        </option>
-
-        {% endfor %}
-
-    </select>
-
-
-    <textarea
-        name="remarks"
-        class="form-control mb-3"
-        placeholder="Remarks"
-    >{{ item.remarks }}</textarea>
-
-
-    <button class="primary-action">
-        Update request
-    </button>
-
-</form>
-
-{% endif %}
 
 {% endblock %}
