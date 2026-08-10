@@ -1,5 +1,10 @@
 import csv
+import os
 from io import BytesIO
+from urllib.parse import urlencode
+from urllib.request import Request as URLRequest
+from urllib.request import urlopen
+from base64 import b64encode
 
 import qrcode
 
@@ -48,30 +53,218 @@ def log(user, action, detail=''):
 
 
 # =========================================================
-# NOTIFICATION + EMAIL
+# PHONE NUMBER FORMAT
 # =========================================================
 
-def notify_request(request_obj, title, message):
+def format_philippine_number(number):
+    """
+    Converts common Philippine mobile formats:
 
-    user = request_obj.resident.user
+    09171234567
+    9171234567
+    +639171234567
 
-    if not user:
-        return
+    into:
 
-    # ==========================================
-    # 1. CREATE WEBSITE NOTIFICATION
-    # ==========================================
+    +639171234567
+    """
 
-    Notification.objects.create(
-        user=user,
-        title=title,
-        message=message,
-        url=f'/requests/{request_obj.pk}/'
+    if not number:
+        return None
+
+    number = str(number).strip()
+
+    # Remove spaces, dash and parentheses
+    number = (
+        number
+        .replace(' ', '')
+        .replace('-', '')
+        .replace('(', '')
+        .replace(')', '')
     )
 
-    # ==========================================
-    # 2. SEND EMAIL
-    # ==========================================
+    if number.startswith('+63'):
+        return number
+
+    if number.startswith('63'):
+        return '+' + number
+
+    if number.startswith('09'):
+        return '+63' + number[1:]
+
+    if number.startswith('9') and len(number) == 10:
+        return '+63' + number
+
+    return number
+
+
+# =========================================================
+# SEND SMS USING TWILIO
+# =========================================================
+
+def send_sms(phone_number, message):
+    """
+    Sends SMS using Twilio REST API.
+
+    Required environment variables:
+
+    TWILIO_ACCOUNT_SID
+    TWILIO_AUTH_TOKEN
+    TWILIO_PHONE_NUMBER
+    """
+
+    account_sid = os.environ.get(
+        'TWILIO_ACCOUNT_SID'
+    )
+
+    auth_token = os.environ.get(
+        'TWILIO_AUTH_TOKEN'
+    )
+
+    twilio_phone = os.environ.get(
+        'TWILIO_PHONE_NUMBER'
+    )
+
+    if not account_sid:
+        print(
+            'SMS NOT SENT: TWILIO_ACCOUNT_SID is missing.'
+        )
+        return False
+
+    if not auth_token:
+        print(
+            'SMS NOT SENT: TWILIO_AUTH_TOKEN is missing.'
+        )
+        return False
+
+    if not twilio_phone:
+        print(
+            'SMS NOT SENT: TWILIO_PHONE_NUMBER is missing.'
+        )
+        return False
+
+    formatted_number = format_philippine_number(
+        phone_number
+    )
+
+    if not formatted_number:
+        print(
+            'SMS NOT SENT: Resident has no contact number.'
+        )
+        return False
+
+    url = (
+        f'https://api.twilio.com/2010-04-01/'
+        f'Accounts/{account_sid}/Messages.json'
+    )
+
+    data = urlencode({
+        'From': twilio_phone,
+        'To': formatted_number,
+        'Body': message,
+    }).encode('utf-8')
+
+    credentials = (
+        f'{account_sid}:{auth_token}'
+    ).encode('utf-8')
+
+    authorization = (
+        'Basic '
+        + b64encode(credentials).decode('ascii')
+    )
+
+    request = URLRequest(
+        url,
+        data=data,
+        method='POST',
+        headers={
+            'Authorization': authorization,
+            'Content-Type':
+                'application/x-www-form-urlencoded',
+        }
+    )
+
+    try:
+
+        with urlopen(
+            request,
+            timeout=20
+        ) as response:
+
+            response.read()
+
+        print(
+            f'SMS SENT TO: {formatted_number}'
+        )
+
+        return True
+
+    except Exception as e:
+
+        print(
+            f'SMS ERROR: {repr(e)}'
+        )
+
+        return False
+
+
+# =========================================================
+# NOTIFICATION + EMAIL + SMS
+# =========================================================
+
+def notify_request(
+    request_obj,
+    title,
+    message
+):
+
+    resident = request_obj.resident
+
+    user = resident.user
+
+    # -----------------------------------------------------
+    # CHECK USER ACCOUNT
+    # -----------------------------------------------------
+
+    if not user:
+
+        print(
+            'NOTIFICATION ERROR: '
+            f'Resident {resident.full_name} '
+            'has no linked user account.'
+        )
+
+        return
+
+
+    # =====================================================
+    # 1. WEBSITE NOTIFICATION
+    # =====================================================
+
+    try:
+
+        Notification.objects.create(
+            user=user,
+            title=title,
+            message=message,
+            url=f'/requests/{request_obj.pk}/'
+        )
+
+        print(
+            f'NOTIFICATION CREATED FOR: '
+            f'{user.username}'
+        )
+
+    except Exception as e:
+
+        print(
+            f'NOTIFICATION ERROR: {repr(e)}'
+        )
+
+
+    # =====================================================
+    # 2. EMAIL
+    # =====================================================
 
     if user.email:
 
@@ -81,25 +274,42 @@ def notify_request(request_obj, title, message):
                 subject=title,
                 message=message,
                 from_email=None,
-                recipient_list=[user.email],
+                recipient_list=[
+                    user.email
+                ],
                 fail_silently=False,
             )
 
             print(
-                f"EMAIL SENT TO: {user.email}"
+                f'EMAIL SENT TO: {user.email}'
             )
 
         except Exception as e:
 
             print(
-                f"EMAIL ERROR: {repr(e)}"
+                f'EMAIL ERROR: {repr(e)}'
             )
 
     else:
 
         print(
-            "EMAIL NOT SENT: User has no email address."
+            'EMAIL NOT SENT: '
+            'User has no email address.'
         )
+
+
+    # =====================================================
+    # 3. SMS
+    # =====================================================
+
+    sms_message = (
+        f'Barangay Maniwaya: {message}'
+    )
+
+    send_sms(
+        resident.contact_number,
+        sms_message
+    )
 
 
 # =========================================================
@@ -125,7 +335,8 @@ def signup(request):
 
             messages.info(
                 request,
-                'Your account is ready. Please complete your resident profile.'
+                'Your account is ready. '
+                'Please complete your resident profile.'
             )
 
             return redirect(
@@ -193,6 +404,7 @@ def dashboard(request):
             context
         )
 
+
     # -----------------------------------------------------
     # USER DASHBOARD
     # -----------------------------------------------------
@@ -208,12 +420,46 @@ def dashboard(request):
             [:5]
         )
 
+
+    # -----------------------------------------------------
+    # UNREAD NOTIFICATIONS
+    # -----------------------------------------------------
+
+    unread_notifications = (
+        request.user.notifications
+        .filter(
+            is_read=False
+        )
+        .count()
+    )
+
+
+    # -----------------------------------------------------
+    # RECENT NOTIFICATIONS
+    # -----------------------------------------------------
+
+    recent_notifications = (
+        request.user.notifications
+        .all()
+        [:5]
+    )
+
+
     return render(
         request,
         'core/dashboard.html',
         {
-            'profile': profile,
-            'recent': recent
+            'profile':
+                profile,
+
+            'recent':
+                recent,
+
+            'unread_notifications':
+                unread_notifications,
+
+            'recent_notifications':
+                recent_notifications,
         }
     )
 
@@ -430,8 +676,11 @@ def staff_requests(request):
         request,
         'core/staff_requests.html',
         {
-            'items': items,
-            'active_status': status
+            'items':
+                items,
+
+            'active_status':
+                status
         }
     )
 
@@ -463,6 +712,44 @@ def update_request(request, pk):
 
         if status in valid_statuses:
 
+            old_status = obj.status
+
+            # -------------------------------------------------
+            # PREVENT DUPLICATE NOTIFICATION
+            # -------------------------------------------------
+
+            if old_status == status:
+
+                obj.remarks = request.POST.get(
+                    'remarks',
+                    ''
+                )
+
+                obj.reviewed_by = request.user
+
+                obj.save(
+                    update_fields=[
+                        'remarks',
+                        'reviewed_by'
+                    ]
+                )
+
+                messages.info(
+                    request,
+                    f'Request is already '
+                    f'{obj.get_status_display()}.'
+                )
+
+                return redirect(
+                    'request_detail',
+                    pk=pk
+                )
+
+
+            # -------------------------------------------------
+            # UPDATE STATUS
+            # -------------------------------------------------
+
             obj.status = status
 
             obj.remarks = request.POST.get(
@@ -471,6 +758,7 @@ def update_request(request, pk):
             )
 
             obj.reviewed_by = request.user
+
 
             # -------------------------------------------------
             # APPROVED / REJECTED
@@ -483,6 +771,7 @@ def update_request(request, pk):
 
                 obj.reviewed_at = timezone.now()
 
+
             # -------------------------------------------------
             # RELEASED
             # -------------------------------------------------
@@ -491,11 +780,13 @@ def update_request(request, pk):
 
                 obj.released_at = timezone.now()
 
+
             obj.save()
 
-            # -------------------------------------------------
-            # USER NOTIFICATION
-            # -------------------------------------------------
+
+            # =================================================
+            # NOTIFICATION MESSAGE
+            # =================================================
 
             status_text = (
                 obj.get_status_display()
@@ -515,11 +806,61 @@ def update_request(request, pk):
                 f'is now {status_text.lower()}.'
             )
 
+
+            # -------------------------------------------------
+            # APPROVED MESSAGE
+            # -------------------------------------------------
+
+            if status == 'approved':
+
+                notification_message = (
+                    f'Your {certificate_name} request '
+                    f'({obj.reference_no}) has been '
+                    f'APPROVED. You may now print or '
+                    f'download your certificate.'
+                )
+
+
+            # -------------------------------------------------
+            # REJECTED MESSAGE
+            # -------------------------------------------------
+
+            elif status == 'rejected':
+
+                notification_message = (
+                    f'Your {certificate_name} request '
+                    f'({obj.reference_no}) has been '
+                    f'REJECTED.'
+                )
+
+
+            # -------------------------------------------------
+            # RELEASED MESSAGE
+            # -------------------------------------------------
+
+            elif status == 'released':
+
+                notification_message = (
+                    f'Your {certificate_name} request '
+                    f'({obj.reference_no}) has been '
+                    f'RELEASED and is ready.'
+                )
+
+
+            # -------------------------------------------------
+            # REMARKS
+            # -------------------------------------------------
+
             if obj.remarks:
 
                 notification_message += (
                     f'\n\nRemarks: {obj.remarks}'
                 )
+
+
+            # =================================================
+            # SEND NOTIFICATION + EMAIL + SMS
+            # =================================================
 
             notify_request(
                 obj,
@@ -527,15 +868,17 @@ def update_request(request, pk):
                 notification_message
             )
 
-            # -------------------------------------------------
+
+            # =================================================
             # ACTIVITY LOG
-            # -------------------------------------------------
+            # =================================================
 
             log(
                 request.user,
                 f'Changed request to {status}',
                 obj.reference_no
             )
+
 
             messages.success(
                 request,
@@ -581,6 +924,7 @@ def certificate_pdf(request, pk):
     ):
         raise Http404
 
+
     # -----------------------------------------------------
     # APPROVAL CHECK
     # -----------------------------------------------------
@@ -599,6 +943,7 @@ def certificate_pdf(request, pk):
             'request_detail',
             pk=pk
         )
+
 
     # -----------------------------------------------------
     # CERTIFICATE TEMPLATE
@@ -622,10 +967,12 @@ def certificate_pdf(request, pk):
             'core/good_moral.html',
     }
 
+
     template_name = certificate_templates.get(
         obj.certificate_type,
         'core/default.html'
     )
+
 
     # -----------------------------------------------------
     # BARANGAY PROFILE
@@ -636,9 +983,11 @@ def certificate_pdf(request, pk):
         .first()
     )
 
+
     if barangay is None:
 
         barangay = BarangayProfile()
+
 
     # -----------------------------------------------------
     # ADMIN CERTIFICATE TEMPLATE
@@ -651,6 +1000,7 @@ def certificate_pdf(request, pk):
         )
         .first()
     )
+
 
     if certificate_template:
 
@@ -671,11 +1021,13 @@ def certificate_pdf(request, pk):
 
         footer = ''
 
+
     # -----------------------------------------------------
     # CERTIFICATE BODY
     # -----------------------------------------------------
 
     body = ''
+
 
     if (
         certificate_template
@@ -702,13 +1054,14 @@ def certificate_pdf(request, pk):
         except Exception as e:
 
             print(
-                "CERTIFICATE BODY ERROR:",
+                'CERTIFICATE BODY ERROR:',
                 repr(e)
             )
 
             body = (
                 certificate_template.body
             )
+
 
     # -----------------------------------------------------
     # CONTEXT
@@ -737,6 +1090,7 @@ def certificate_pdf(request, pk):
         'footer':
             footer,
     }
+
 
     # =====================================================
     # DOWNLOAD PDF
@@ -778,19 +1132,21 @@ def certificate_pdf(request, pk):
         except Exception as e:
 
             print(
-                "PDF ERROR:",
+                'PDF ERROR:',
                 repr(e)
             )
 
             messages.error(
                 request,
-                'PDF download failed. Please use Print Document.'
+                'PDF download failed. '
+                'Please use Print Document.'
             )
 
             return redirect(
                 'request_detail',
                 pk=obj.pk
             )
+
 
     # =====================================================
     # PRINT DOCUMENT
@@ -835,19 +1191,48 @@ def notifications(request):
         .all()
     )
 
-    # Mark unread notifications as read
-    notes.filter(
-        is_read=False
-    ).update(
-        is_read=True
-    )
-
     return render(
         request,
         'core/notifications.html',
         {
-            'notes': notes
+            'notes':
+                notes
         }
+    )
+
+
+# =========================================================
+# MARK NOTIFICATION AS READ
+# =========================================================
+
+@login_required
+def mark_notification_read(
+    request,
+    pk
+):
+
+    notification = get_object_or_404(
+        Notification,
+        pk=pk,
+        user=request.user
+    )
+
+    notification.is_read = True
+
+    notification.save(
+        update_fields=[
+            'is_read'
+        ]
+    )
+
+    if notification.url:
+
+        return redirect(
+            notification.url
+        )
+
+    return redirect(
+        'notifications'
     )
 
 
@@ -882,8 +1267,11 @@ def reports(request):
         request,
         'core/reports.html',
         {
-            'by_type': by_type,
-            'recent_logs': recent_logs
+            'by_type':
+                by_type,
+
+            'recent_logs':
+                recent_logs
         }
     )
 
@@ -918,12 +1306,14 @@ def report_csv(request):
         'Requested'
     ])
 
+
     requests = (
         CertificateRequest.objects
         .select_related(
             'resident'
         )
     )
+
 
     for obj in requests:
 
@@ -941,6 +1331,7 @@ def report_csv(request):
                 '%Y-%m-%d'
             )
         ])
+
 
     return response
 
