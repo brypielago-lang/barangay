@@ -1,21 +1,20 @@
-from django.core.mail.backends.base import BaseEmailBackend
-from django.core.mail.message import EmailMessage
-from django.conf import settings
 import resend
+
+from django.conf import settings
+from django.core.mail.backends.base import BaseEmailBackend
 
 
 class ResendEmailBackend(BaseEmailBackend):
 
     def send_messages(self, email_messages):
+
         if not email_messages:
             return 0
 
         if not settings.RESEND_API_KEY:
-            if not self.fail_silently:
-                raise ValueError(
-                    "RESEND_API_KEY is not configured."
-                )
-            return 0
+            raise ValueError(
+                "RESEND_API_KEY is not configured."
+            )
 
         resend.api_key = settings.RESEND_API_KEY
 
@@ -27,17 +26,25 @@ class ResendEmailBackend(BaseEmailBackend):
                 continue
 
             try:
-                resend.Emails.send({
-                    "from": message.from_email,
+
+                params = {
+                    "from": settings.DEFAULT_FROM_EMAIL,
                     "to": message.recipients(),
                     "subject": message.subject,
                     "text": message.body,
-                })
+                }
+
+                resend.Emails.send(params)
 
                 sent_count += 1
 
-            except Exception:
+            except Exception as e:
+
                 if not self.fail_silently:
                     raise
+
+                print(
+                    f"RESEND EMAIL ERROR: {e}"
+                )
 
         return sent_count
