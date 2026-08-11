@@ -14,13 +14,8 @@ from .models import (
 )
 
 
-# =========================================================
-# BARANGAY PROFILE
-# =========================================================
-
 @admin.register(BarangayProfile)
 class BarangayProfileAdmin(admin.ModelAdmin):
-
     list_display = (
         'name',
         'municipality',
@@ -31,13 +26,8 @@ class BarangayProfileAdmin(admin.ModelAdmin):
     )
 
 
-# =========================================================
-# RESIDENT
-# =========================================================
-
 @admin.register(Resident)
 class ResidentAdmin(admin.ModelAdmin):
-
     list_display = (
         'resident_no',
         'full_name',
@@ -63,13 +53,8 @@ class ResidentAdmin(admin.ModelAdmin):
     )
 
 
-# =========================================================
-# CERTIFICATE TEMPLATE
-# =========================================================
-
 @admin.register(CertificateTemplate)
 class CertificateTemplateAdmin(admin.ModelAdmin):
-
     list_display = (
         'certificate_type',
         'title',
@@ -82,13 +67,8 @@ class CertificateTemplateAdmin(admin.ModelAdmin):
     )
 
 
-# =========================================================
-# ID TEMPLATE
-# =========================================================
-
 @admin.register(IDTemplate)
 class IDTemplateAdmin(admin.ModelAdmin):
-
     list_display = (
         'name',
         'is_active',
@@ -96,10 +76,6 @@ class IDTemplateAdmin(admin.ModelAdmin):
         'updated_at',
     )
 
-
-# =========================================================
-# CERTIFICATE REQUEST
-# =========================================================
 
 @admin.register(CertificateRequest)
 class CertificateRequestAdmin(admin.ModelAdmin):
@@ -134,28 +110,20 @@ class CertificateRequestAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
 
-        # =====================================================
         # GET OLD STATUS
-        # =====================================================
-
         old_status = None
 
         if change and obj.pk:
-
             try:
                 old_obj = CertificateRequest.objects.get(
                     pk=obj.pk
                 )
-
                 old_status = old_obj.status
 
             except CertificateRequest.DoesNotExist:
                 old_status = None
 
-        # =====================================================
         # REVIEWED BY
-        # =====================================================
-
         if obj.status in (
             'approved',
             'rejected',
@@ -163,31 +131,20 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         ):
             obj.reviewed_by = request.user
 
-        # =====================================================
         # REVIEWED DATE
-        # =====================================================
-
         if obj.status in (
             'approved',
             'rejected',
         ):
-
             if not obj.reviewed_at:
                 obj.reviewed_at = timezone.now()
 
-        # =====================================================
         # RELEASED DATE
-        # =====================================================
-
         if obj.status == 'released':
-
             if not obj.released_at:
                 obj.released_at = timezone.now()
 
-        # =====================================================
-        # SAVE REQUEST FIRST
-        # =====================================================
-
+        # SAVE FIRST
         super().save_model(
             request,
             obj,
@@ -195,31 +152,18 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             change
         )
 
-        # =====================================================
-        # ONLY SEND NOTIFICATION WHEN STATUS CHANGES
-        # =====================================================
-
+        # DON'T SEND AGAIN IF STATUS DID NOT CHANGE
         if old_status == obj.status:
             return
 
-        # =====================================================
         # GET RESIDENT
-        # =====================================================
-
         resident = obj.resident
 
         if not resident:
-
-            print(
-                "NOTIFICATION ERROR: No resident."
-            )
-
+            print("NOTIFICATION ERROR: No resident.")
             return
 
-        # =====================================================
         # GET USER
-        # =====================================================
-
         user = getattr(
             resident,
             'user',
@@ -227,36 +171,25 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         if not user:
-
             print(
                 "NOTIFICATION ERROR: "
                 "Resident has no linked user."
             )
-
             return
 
-        # =====================================================
-        # STATUS TEXT
-        # =====================================================
-
+        # STATUS
         status_text = obj.get_status_display()
 
         certificate_name = (
             obj.get_certificate_type_display()
         )
 
-        # =====================================================
-        # NOTIFICATION TITLE
-        # =====================================================
-
+        # TITLE
         title = (
             f'Certificate Request {status_text}'
         )
 
-        # =====================================================
-        # NOTIFICATION MESSAGE
-        # =====================================================
-
+        # MESSAGE
         message = (
             f'Your {certificate_name} request '
             f'({obj.reference_no}) '
@@ -264,17 +197,12 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         if obj.remarks:
-
             message += (
                 f'\n\nRemarks: {obj.remarks}'
             )
 
-        # =====================================================
         # WEBSITE NOTIFICATION
-        # =====================================================
-
         try:
-
             Notification.objects.create(
                 user=user,
                 title=title,
@@ -288,16 +216,12 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             )
 
         except Exception as e:
-
             print(
                 'NOTIFICATION ERROR: '
                 f'{repr(e)}'
             )
 
-        # =====================================================
         # EMAIL
-        # =====================================================
-
         email = getattr(
             user,
             'email',
@@ -305,12 +229,10 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         if not email:
-
             print(
                 'EMAIL NOT SENT: '
                 f'{user.username} has no email.'
             )
-
             return
 
         try:
@@ -342,10 +264,6 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             )
 
 
-# =========================================================
-# NOTIFICATIONS
-# =========================================================
-
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
 
@@ -371,10 +289,6 @@ class NotificationAdmin(admin.ModelAdmin):
         'created_at',
     )
 
-
-# =========================================================
-# ACTIVITY LOG
-# =========================================================
 
 @admin.register(ActivityLog)
 class ActivityLogAdmin(admin.ModelAdmin):
