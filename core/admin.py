@@ -143,6 +143,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         if change and obj.pk:
 
             try:
+
                 old_obj = CertificateRequest.objects.get(
                     pk=obj.pk
                 )
@@ -150,7 +151,9 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 old_status = old_obj.status
 
             except CertificateRequest.DoesNotExist:
+
                 old_status = None
+
 
         # =====================================================
         # REVIEWED BY
@@ -161,7 +164,9 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             'rejected',
             'released',
         ):
+
             obj.reviewed_by = request.user
+
 
         # =====================================================
         # REVIEWED DATE
@@ -173,7 +178,9 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         ):
 
             if not obj.reviewed_at:
+
                 obj.reviewed_at = timezone.now()
+
 
         # =====================================================
         # RELEASED DATE
@@ -182,7 +189,9 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         if obj.status == 'released':
 
             if not obj.released_at:
+
                 obj.released_at = timezone.now()
+
 
         # =====================================================
         # SAVE REQUEST
@@ -195,12 +204,15 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             change
         )
 
+
         # =====================================================
         # ONLY NOTIFY WHEN STATUS CHANGES
         # =====================================================
 
         if old_status == obj.status:
+
             return
+
 
         # =====================================================
         # GET RESIDENT
@@ -209,10 +221,13 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         resident = obj.resident
 
         if not resident:
+
             print(
                 "NOTIFICATION ERROR: No resident."
             )
+
             return
+
 
         # =====================================================
         # GET USER
@@ -225,11 +240,14 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         )
 
         if not user:
+
             print(
                 "NOTIFICATION ERROR: "
                 "Resident has no linked user."
             )
+
             return
+
 
         # =====================================================
         # STATUS
@@ -241,6 +259,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
             obj.get_certificate_type_display()
         )
 
+
         # =====================================================
         # TITLE
         # =====================================================
@@ -248,6 +267,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         title = (
             f'Certificate Request {status_text}'
         )
+
 
         # =====================================================
         # MESSAGE
@@ -265,6 +285,7 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 f'\n\nRemarks: {obj.remarks}'
             )
 
+
         # =====================================================
         # WEBSITE NOTIFICATION
         # =====================================================
@@ -272,10 +293,15 @@ class CertificateRequestAdmin(admin.ModelAdmin):
         try:
 
             Notification.objects.create(
+
                 user=user,
+
                 title=title,
+
                 message=message,
+
                 url=f'/requests/{obj.pk}/'
+
             )
 
             print(
@@ -290,44 +316,45 @@ class CertificateRequestAdmin(admin.ModelAdmin):
                 f'{repr(e)}'
             )
 
+
         # =====================================================
-        # EMAIL
+        # RESEND TEST EMAIL
         # =====================================================
 
-        email = getattr(
-            user,
-            'email',
-            None
-        )
+        # TEMPORARY TEST RECIPIENT
+        # This is NOT the resident's Gmail.
 
-        if not email:
+        email = 'delivered@resend.dev'
 
-            print(
-                'EMAIL NOT SENT: '
-                f'{user.username} has no email.'
-            )
-
-            return
 
         try:
 
             print(
-                'SENDING EMAIL TO: '
+                'SENDING TEST EMAIL TO: '
                 f'{email}'
             )
 
+
             result = send_mail(
+
                 subject=title,
+
                 message=message,
+
                 from_email=settings.DEFAULT_FROM_EMAIL,
+
                 recipient_list=[email],
+
                 fail_silently=False,
+
             )
+
 
             print(
                 'EMAIL SEND RESULT: '
                 f'{result} TO: {email}'
             )
+
 
         except Exception as e:
 
